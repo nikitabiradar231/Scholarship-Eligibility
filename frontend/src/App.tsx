@@ -13,6 +13,7 @@ import { StudentPortal } from "./components/StudentPortal";
 import { ProviderPortal } from "./components/ProviderPortal";
 import { LedgerInspector } from "./components/LedgerInspector";
 import { PrivacyModal } from "./components/PrivacyModal";
+import { Wallet } from "lucide-react";
 
 const walletAdapter = new MidnightWalletAdapter();
 
@@ -173,8 +174,29 @@ export function App() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        {/* If no role is selected yet for this account, show Role Selector */}
-        {!currentRole ? (
+        {/* If Wallet is not connected, show Connect Lace Wallet prompt */}
+        {!walletState.isConnected || !walletState.address ? (
+          <div className="max-w-xl mx-auto my-12 p-8 rounded-3xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl text-center space-y-6 shadow-2xl">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 p-0.5 flex items-center justify-center">
+              <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                <Wallet className="w-8 h-8 text-indigo-400" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-white tracking-tight">Connect Lace Wallet</h2>
+              <p className="text-slate-400 text-sm max-w-md mx-auto">
+                Connect your Midnight Lace Wallet extension to authorize permissions, submit applications, and execute local Zero-Knowledge eligibility proofs.
+              </p>
+            </div>
+            <button
+              onClick={handleConnectWallet}
+              className="px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl shadow-lg shadow-indigo-600/30 transition-all inline-flex items-center space-x-2 border border-indigo-500/30 active:scale-95 cursor-pointer"
+            >
+              <Wallet className="w-5 h-5" />
+              <span>Connect Lace Wallet</span>
+            </button>
+          </div>
+        ) : !currentRole ? (
           <RoleSelector onSelectRole={handleSelectRole} />
         ) : (
           <>
