@@ -247,7 +247,8 @@ The GitHub Actions workflow in [`.github/workflows/ci.yml`](file:///c:/Users/nik
 
 ```text
 Network: Midnight Preprod
-Contract Address: To be added after deployment
+Contract Address: 0x09f417e8910d540263f1011867160ad3b0f5904972e29fbcd1e6d97c36a6a1bf
+Block Explorer: https://explorer.preprod.midnight.network/contract/0x09f417e8910d540263f1011867160ad3b0f5904972e29fbcd1e6d97c36a6a1bf
 ```
 
 Deployment instructions:

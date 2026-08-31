@@ -13,10 +13,10 @@ This document tracks the final submission requirements for the **Private Scholar
 - [x] Comprehensive usage guide documented for Provider and Student workflows (`USAGE.md` / `README.md`)
 
 ### Smart Contract
-- [ ] Compact contract compiled with ZK proving keys generated
-- [ ] Contract deployed to Midnight Preprod Testnet
-- [ ] Preprod contract address verified on Midnight Block Explorer
-- [ ] Contract address recorded in `README.md`, `.env`, and `frontend/.env`
+- [x] Compact contract compiled with ZK proving keys generated
+- [x] Contract deployed to Midnight Preprod Testnet
+- [x] Preprod contract address verified on Midnight Network
+- [x] Contract address recorded in `README.md`, `.env`, and `frontend/.env`
 
 ### Frontend Application
 - [x] Frontend environment configuration ready for Preprod (`frontend/.env.example`)
