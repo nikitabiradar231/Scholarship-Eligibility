@@ -14,6 +14,7 @@ import { ProviderPortal } from "./components/ProviderPortal";
 import { LedgerInspector } from "./components/LedgerInspector";
 import { PrivacyModal } from "./components/PrivacyModal";
 import { WalletConnectModal } from "./components/WalletConnectModal";
+import { UserProfileModal } from "./components/UserProfileModal";
 import { Wallet } from "lucide-react";
 
 const walletAdapter = new MidnightWalletAdapter();
@@ -26,8 +27,15 @@ export function App() {
   const [walletState, setWalletState] = useState(() => walletAdapter.getState());
   const [currentRole, setCurrentRole] = useState<UserRole>(null);
   const [activeTab, setActiveTab] = useState<"student" | "provider" | "inspector">("student");
+  
+  const [userName, setUserName] = useState<string>(() => {
+    const addr = walletAdapter.getState().address;
+    return addr ? localStorage.getItem(`username_${addr}`) || "" : "";
+  });
+
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState<boolean>(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState<boolean>(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
 
   const [publicState, setPublicState] = useState(() => contract.getLedgerState());
   const [scholarships, setScholarships] = useState<ScholarshipItem[]>(() => contract.getScholarships());
@@ -39,13 +47,17 @@ export function App() {
     setApplications(contract.getApplicationsForProvider());
   };
 
-  // Sync role whenever wallet address changes
+  // Sync role and username whenever wallet address changes
   useEffect(() => {
     const address = walletState.address;
     if (!address) {
       setCurrentRole(null);
+      setUserName("");
       return;
     }
+
+    const savedName = localStorage.getItem(`username_${address}`);
+    setUserName(savedName || "");
 
     const registeredContractRole = contract.getUserRole(address);
     const storedRole = (localStorage.getItem(`role_${address}`) as UserRole) || registeredContractRole;
@@ -62,6 +74,14 @@ export function App() {
       setCurrentRole(null);
     }
   }, [walletState.address, contract]);
+
+  const handleSaveUserName = (newName: string) => {
+    const address = walletState.address;
+    if (address) {
+      localStorage.setItem(`username_${address}`, newName);
+      setUserName(newName);
+    }
+  };
 
   const handleSelectRole = (role: "student" | "provider") => {
     const address = walletState.address || "0xaddr_provider_alpha";
@@ -82,7 +102,7 @@ export function App() {
     maxIncome: number
   ) => {
     const address = walletState.address || "0xaddr_provider_alpha";
-    const displayName = address.includes("beta") ? "Provider Beta Org" : "Provider Admin Org";
+    const displayName = userName || (address.includes("beta") ? "Provider Beta Org" : "Provider Admin Org");
     contract.createScholarship(name, description, minMarks, maxIncome, ["Academic Marksheet", "Family Income Certificate"], displayName, address);
     refreshState();
   };
@@ -103,10 +123,11 @@ export function App() {
     incomeCertFileName: string
   ) => {
     const address = walletState.address || "0xaddr_student_alex";
+    const displayName = userName ? `${userName} (Student)` : `Student (${address.slice(0, 8)})`;
     contract.submitApplication(
       scholarshipId,
       address,
-      `Student (${address.slice(0, 8)})`,
+      displayName,
       marksheetFileName,
       incomeCertFileName
     );
@@ -167,6 +188,8 @@ export function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenPrivacyModal={() => setIsPrivacyModalOpen(true)}
+        onOpenProfileModal={() => setIsProfileModalOpen(true)}
+        userName={userName}
         walletState={walletState}
         onConnectWallet={() => setIsWalletModalOpen(true)}
         onDisconnectWallet={handleDisconnectWallet}
@@ -240,6 +263,17 @@ export function App() {
         onClose={() => setIsWalletModalOpen(false)}
         onConnectLace={handleConnectLaceWallet}
         onConnectCustomAddress={handleConnectCustomAddress}
+      />
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        address={walletState.address}
+        currentRole={currentRole}
+        userName={userName}
+        onSaveUserName={handleSaveUserName}
+        onDisconnect={handleDisconnectWallet}
       />
 
       {/* Privacy & Technology Explanation Modal */}

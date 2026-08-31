@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, Wallet, GraduationCap, Building2, Lock, LogOut } from "lucide-react";
+import { ShieldCheck, Wallet, GraduationCap, Building2, Lock, LogOut, User } from "lucide-react";
 import { UserRole } from "./RoleSelector";
 
 interface HeaderProps {
@@ -7,6 +7,8 @@ interface HeaderProps {
   activeTab: "student" | "provider" | "inspector";
   setActiveTab: (tab: "student" | "provider" | "inspector") => void;
   onOpenPrivacyModal: () => void;
+  onOpenProfileModal: () => void;
+  userName: string;
   walletState: {
     isConnected: boolean;
     address: string | null;
@@ -22,14 +24,16 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab,
   onOpenPrivacyModal,
+  onOpenProfileModal,
+  userName,
   walletState,
   onConnectWallet,
   onDisconnectWallet
 }) => {
   const formatAddress = (addr: string | null) => {
     if (!addr) return "";
-    if (addr.length > 18) {
-      return `${addr.slice(0, 10)}...${addr.slice(-4)}`;
+    if (addr.length > 16) {
+      return `${addr.slice(0, 8)}...${addr.slice(-4)}`;
     }
     return addr;
   };
@@ -111,7 +115,7 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             )}
 
-            {/* Connect Wallet / Connected State Pill */}
+            {/* Connect Wallet / Connected State Pill with User Profile */}
             {!walletState.isConnected || !walletState.address ? (
               <button
                 onClick={onConnectWallet}
@@ -122,10 +126,16 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             ) : (
               <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs font-mono font-medium text-slate-200">
+                <button
+                  onClick={onOpenProfileModal}
+                  className="flex items-center space-x-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 transition-all cursor-pointer"
+                  title="View User Profile"
+                >
                   <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>{formatAddress(walletState.address)}</span>
-                </div>
+                  <span className="font-bold text-white max-w-[120px] truncate">{userName || "User"}</span>
+                  <span className="font-mono text-slate-400 text-[11px]">({formatAddress(walletState.address)})</span>
+                  <User className="w-3.5 h-3.5 text-indigo-400 ml-0.5" />
+                </button>
 
                 <button
                   onClick={onDisconnectWallet}
