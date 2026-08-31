@@ -13,6 +13,7 @@ import { StudentPortal } from "./components/StudentPortal";
 import { ProviderPortal } from "./components/ProviderPortal";
 import { LedgerInspector } from "./components/LedgerInspector";
 import { PrivacyModal } from "./components/PrivacyModal";
+import { WalletConnectModal } from "./components/WalletConnectModal";
 import { Wallet } from "lucide-react";
 
 const walletAdapter = new MidnightWalletAdapter();
@@ -26,6 +27,7 @@ export function App() {
   const [currentRole, setCurrentRole] = useState<UserRole>(null);
   const [activeTab, setActiveTab] = useState<"student" | "provider" | "inspector">("student");
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState<boolean>(false);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState<boolean>(false);
 
   const [publicState, setPublicState] = useState(() => contract.getLedgerState());
   const [scholarships, setScholarships] = useState<ScholarshipItem[]>(() => contract.getScholarships());
@@ -45,7 +47,6 @@ export function App() {
       return;
     }
 
-    // Check if contract or localStorage has role registered for this address
     const registeredContractRole = contract.getUserRole(address);
     const storedRole = (localStorage.getItem(`role_${address}`) as UserRole) || registeredContractRole;
 
@@ -61,11 +62,6 @@ export function App() {
       setCurrentRole(null);
     }
   }, [walletState.address, contract]);
-
-  const handleSelectAccount = (newAddress: string) => {
-    const updated = walletAdapter.switchAccount(newAddress);
-    setWalletState(updated);
-  };
 
   const handleSelectRole = (role: "student" | "provider") => {
     const address = walletState.address || "0xaddr_provider_alpha";
@@ -86,7 +82,7 @@ export function App() {
     maxIncome: number
   ) => {
     const address = walletState.address || "0xaddr_provider_alpha";
-    const displayName = address.includes("beta") ? "Provider Beta Org" : "Provider Alpha Org";
+    const displayName = address.includes("beta") ? "Provider Beta Org" : "Provider Admin Org";
     contract.createScholarship(name, description, minMarks, maxIncome, ["Academic Marksheet", "Family Income Certificate"], displayName, address);
     refreshState();
   };
@@ -110,7 +106,7 @@ export function App() {
     contract.submitApplication(
       scholarshipId,
       address,
-      "Alex Vance (Student)",
+      `Student (${address.slice(0, 8)})`,
       marksheetFileName,
       incomeCertFileName
     );
@@ -147,9 +143,14 @@ export function App() {
     return result;
   };
 
-  const handleConnectWallet = async () => {
+  const handleConnectLaceWallet = async () => {
     const updated = await walletAdapter.connect();
     setWalletState(updated);
+  };
+
+  const handleConnectCustomAddress = (address: string) => {
+    const updated = walletAdapter.connect(address);
+    setWalletState(updated as any);
   };
 
   const handleDisconnectWallet = () => {
@@ -167,7 +168,7 @@ export function App() {
         setActiveTab={setActiveTab}
         onOpenPrivacyModal={() => setIsPrivacyModalOpen(true)}
         walletState={walletState}
-        onConnectWallet={handleConnectWallet}
+        onConnectWallet={() => setIsWalletModalOpen(true)}
         onDisconnectWallet={handleDisconnectWallet}
       />
 
@@ -183,17 +184,17 @@ export function App() {
               </div>
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-white tracking-tight">Connect Lace Wallet</h2>
+              <h2 className="text-2xl font-bold text-white tracking-tight">Connect Your Wallet</h2>
               <p className="text-slate-400 text-sm max-w-md mx-auto">
-                Connect your Midnight Lace Wallet extension to authorize permissions, submit applications, and execute local Zero-Knowledge eligibility proofs.
+                Connect your Midnight Lace Wallet extension or enter your wallet address to submit applications and execute Zero-Knowledge eligibility proofs.
               </p>
             </div>
             <button
-              onClick={handleConnectWallet}
+              onClick={() => setIsWalletModalOpen(true)}
               className="px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl shadow-lg shadow-indigo-600/30 transition-all inline-flex items-center space-x-2 border border-indigo-500/30 active:scale-95 cursor-pointer"
             >
               <Wallet className="w-5 h-5" />
-              <span>Connect Lace Wallet</span>
+              <span>Connect Wallet</span>
             </button>
           </div>
         ) : !currentRole ? (
@@ -214,7 +215,7 @@ export function App() {
               <ProviderPortal
                 scholarships={scholarships}
                 applications={applications}
-                currentWalletAddress={walletState.address || "0xaddr_provider_alpha"}
+                currentWalletAddress={walletState.address || ""}
                 onCreateScholarship={handleCreateScholarship}
                 onDeleteScholarship={handleDeleteScholarship}
                 onUpdateStatus={handleUpdateApplicationStatus}
@@ -233,33 +234,23 @@ export function App() {
 
       </main>
 
+      {/* Wallet Connection Modal */}
+      <WalletConnectModal
+        isOpen={isWalletModalOpen}
+        onClose={() => setIsWalletModalOpen(false)}
+        onConnectLace={handleConnectLaceWallet}
+        onConnectCustomAddress={handleConnectCustomAddress}
+      />
+
       {/* Privacy & Technology Explanation Modal */}
       <PrivacyModal
         isOpen={isPrivacyModalOpen}
         onClose={() => setIsPrivacyModalOpen(false)}
       />
 
-      {/* Clean Footer with Optional Developer Link */}
-      <footer className="border-t border-slate-900 bg-slate-950/80 py-6 text-center text-xs text-slate-500 space-y-1">
-        <div className="flex items-center justify-center space-x-3">
-          <span className="font-semibold text-slate-400">Private Scholarship Portal</span>
-          <span>•</span>
-          <button
-            onClick={() => setIsPrivacyModalOpen(true)}
-            className="text-indigo-400 hover:underline"
-          >
-            How Privacy Works
-          </button>
-          <span>•</span>
-          <button
-            onClick={() => {
-              setActiveTab("inspector");
-            }}
-            className="text-slate-400 hover:text-white hover:underline font-mono text-[11px]"
-          >
-            Developer Ledger Inspector
-          </button>
-        </div>
+      {/* Clean Footer */}
+      <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-400">
+        Private Scholarship Eligibility Verification &copy; 2026 Powered by Midnight Network ZK Smart Contracts.
       </footer>
 
     </div>
@@ -267,4 +258,3 @@ export function App() {
 }
 
 export default App;
-
