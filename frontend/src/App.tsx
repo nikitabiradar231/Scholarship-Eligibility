@@ -168,7 +168,6 @@ export function App() {
         walletState={walletState}
         onConnectWallet={handleConnectWallet}
         onDisconnectWallet={handleDisconnectWallet}
-        onSelectAccount={handleSelectAccount}
       />
 
       {/* Main Content Area */}
