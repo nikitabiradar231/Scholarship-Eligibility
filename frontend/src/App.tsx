@@ -146,6 +146,16 @@ export function App() {
     return result;
   };
 
+  const handleConnectWallet = async () => {
+    const updated = await walletAdapter.connect();
+    setWalletState(updated);
+  };
+
+  const handleDisconnectWallet = () => {
+    const updated = walletAdapter.disconnect();
+    setWalletState(updated);
+  };
+
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-950 text-slate-100">
       
@@ -156,6 +166,8 @@ export function App() {
         setActiveTab={setActiveTab}
         onOpenPrivacyModal={() => setIsPrivacyModalOpen(true)}
         walletState={walletState}
+        onConnectWallet={handleConnectWallet}
+        onDisconnectWallet={handleDisconnectWallet}
         onSelectAccount={handleSelectAccount}
       />
 
