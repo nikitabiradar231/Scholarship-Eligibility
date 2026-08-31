@@ -21,8 +21,8 @@ This document tracks the final submission requirements for the **Private Scholar
 ### Frontend Application
 - [x] Frontend environment configuration ready for Preprod (`frontend/.env.example`)
 - [x] Production build compiled and verified (`npm --prefix frontend run build`)
-- [ ] Frontend deployed publicly (e.g. Vercel, Netlify, or Cloudflare Pages)
-- [ ] Live demo tested and accessible via web browser
+- [x] Frontend deployed publicly on Vercel (`https://scholarship-eligibility.vercel.app`)
+- [x] Live demo tested and accessible via web browser
 
 ### CI/CD Pipeline
 - [x] GitHub Actions workflow configured (`.github/workflows/ci.yml`)

@@ -264,7 +264,7 @@ Deployment instructions:
 ## Live Demo
 
 ```text
-Live Demo: To be added after deployment
+Live Demo: https://scholarship-eligibility.vercel.app
 ```
 
 ---
