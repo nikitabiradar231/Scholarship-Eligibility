@@ -269,10 +269,19 @@ Live Demo: https://scholarship-eligibility.vercel.app
 
 ---
 
+## 🌐 Build in Public
+
+ScholarShield is being built publicly in the open. Follow our development journey, protocol updates, and release announcements through our official channels:
+
+- **Official Product X (Twitter) Profile**: [https://x.com/ScholarShieldZ](https://x.com/ScholarShieldZ)
+- **Live Production Application**: [https://scholarship-eligibility.vercel.app](https://scholarship-eligibility.vercel.app)
+
+---
+
 ## Product X Profile
 
 ```text
-Product X Profile: To be added
+Product X Profile: https://x.com/ScholarShieldZ
 ```
 
 ---
