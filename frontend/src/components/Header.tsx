@@ -65,31 +65,29 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Main Navigation */}
           {currentRole && (
             <nav className="hidden md:flex items-center space-x-1 bg-slate-900/60 p-1 rounded-xl border border-slate-800/60">
-              {currentRole === "student" ? (
-                <button
-                  onClick={() => setActiveTab("student")}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer ${
-                    activeTab === "student"
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  <GraduationCap className="w-4 h-4" />
-                  <span>Student Portal</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => setActiveTab("provider")}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer ${
-                    activeTab === "provider"
-                      ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
-                      : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  <Building2 className="w-4 h-4" />
-                  <span>Provider Dashboard</span>
-                </button>
-              )}
+              <button
+                onClick={() => setActiveTab("student")}
+                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer ${
+                  activeTab === "student"
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <GraduationCap className="w-4 h-4" />
+                <span>Student Portal</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("provider")}
+                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer ${
+                  activeTab === "provider"
+                    ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Building2 className="w-4 h-4" />
+                <span>Provider Dashboard</span>
+              </button>
 
               <button
                 onClick={onOpenPrivacyModal}

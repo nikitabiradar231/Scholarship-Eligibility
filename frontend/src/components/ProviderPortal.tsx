@@ -64,6 +64,14 @@ export const ProviderPortal: React.FC<ProviderPortalProps> = ({
   const [selectedGrantFilter, setSelectedGrantFilter] = useState<string>("all");
   const [rejectionReason, setRejectionReason] = useState<string>("");
   const [isRejecting, setIsRejecting] = useState(false);
+  const [previewDocument, setPreviewDocument] = useState<{
+    title: string;
+    type: string;
+    fileName: string;
+    studentName: string;
+    uploadedAt: string;
+    hash: string;
+  } | null>(null);
 
   // Filter ONLY scholarships created by current provider wallet address
   const ownedScholarships = scholarships.filter((s) => s.creatorAddress === currentWalletAddress);
@@ -430,7 +438,7 @@ export const ProviderPortal: React.FC<ProviderPortalProps> = ({
             {/* Submitted Documents Section */}
             <div className="space-y-2">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">
-                Submitted Documents
+                Submitted Documents & Credentials
               </h4>
               <div className="space-y-2 text-xs font-mono">
                 
@@ -439,9 +447,22 @@ export const ProviderPortal: React.FC<ProviderPortalProps> = ({
                     <FileText className="w-4 h-4 text-indigo-400" />
                     <div>
                       <div className="text-slate-200 font-bold">{selectedApp.marksheet?.fileName || "Academic_Marksheet.pdf"}</div>
+                      <div className="text-[10px] text-slate-500">Official Marksheet • {selectedApp.marksheet?.fileSize || "1.2 MB"}</div>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 text-[10px] rounded bg-indigo-950 text-indigo-300 border border-indigo-800">Uploaded</span>
+                  <button
+                    onClick={() => setPreviewDocument({
+                      title: "Official Academic Marksheet",
+                      type: "Academic Marksheet Record",
+                      fileName: selectedApp.marksheet?.fileName || "Academic_Marksheet.pdf",
+                      studentName: selectedApp.studentName,
+                      uploadedAt: selectedApp.marksheet?.uploadedAt || selectedApp.submittedAt,
+                      hash: selectedApp.marksheet?.mockHash || "0xhash_marksheet_98412"
+                    })}
+                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 flex items-center space-x-1 transition-all cursor-pointer"
+                  >
+                    <span>View Document</span>
+                  </button>
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
@@ -449,9 +470,22 @@ export const ProviderPortal: React.FC<ProviderPortalProps> = ({
                     <FileText className="w-4 h-4 text-emerald-400" />
                     <div>
                       <div className="text-slate-200 font-bold">{selectedApp.incomeCertificate?.fileName || "Income_Certificate.pdf"}</div>
+                      <div className="text-[10px] text-slate-500 font-mono">Income Certificate • {selectedApp.incomeCertificate?.fileSize || "750 KB"}</div>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 text-[10px] rounded bg-emerald-950 text-emerald-300 border border-emerald-800">Uploaded</span>
+                  <button
+                    onClick={() => setPreviewDocument({
+                      title: "Family Income Certificate",
+                      type: "Income Tax Statement Record",
+                      fileName: selectedApp.incomeCertificate?.fileName || "Income_Certificate.pdf",
+                      studentName: selectedApp.studentName,
+                      uploadedAt: selectedApp.incomeCertificate?.uploadedAt || selectedApp.submittedAt,
+                      hash: selectedApp.incomeCertificate?.mockHash || "0xhash_income_43291"
+                    })}
+                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 flex items-center space-x-1 transition-all cursor-pointer"
+                  >
+                    <span>View Document</span>
+                  </button>
                 </div>
 
               </div>
@@ -595,6 +629,79 @@ export const ProviderPortal: React.FC<ProviderPortalProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DOCUMENT PREVIEW MODAL */}
+      {previewDocument && (
+        <div className="fixed inset-0 z-[60] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-card rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-indigo-500/50 space-y-5 shadow-2xl relative">
+            
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center space-x-2">
+                <FileText className="w-5 h-5 text-indigo-400" />
+                <div>
+                  <h3 className="text-base font-bold text-white">{previewDocument.title}</h3>
+                  <p className="text-[10px] text-slate-400 font-mono">Student: {previewDocument.studentName}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPreviewDocument(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Document Certificate Viewer Card */}
+            <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 space-y-4 font-mono text-xs">
+              <div className="flex items-center justify-between border-b border-slate-900 pb-3">
+                <span className="text-indigo-400 font-bold uppercase text-[10px] tracking-wider">OFFICIAL SUBMITTED DOCUMENT</span>
+                <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-bold">
+                  ✓ VERIFIED FORMAT
+                </span>
+              </div>
+
+              <div className="space-y-2.5 text-slate-300">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Document Type:</span>
+                  <span className="font-bold text-white">{previewDocument.type}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">File Name:</span>
+                  <span className="font-bold text-indigo-300">{previewDocument.fileName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Applicant Name:</span>
+                  <span className="font-bold text-white">{previewDocument.studentName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Uploaded Timestamp:</span>
+                  <span className="text-slate-300">{new Date(previewDocument.uploadedAt).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-slate-900">
+                  <span className="text-slate-500">Cryptographic Digest:</span>
+                  <span className="text-[10px] text-purple-300 truncate max-w-[210px] font-mono">{previewDocument.hash}</span>
+                </div>
+              </div>
+
+              {/* Watermark / Document Stamp */}
+              <div className="p-4 rounded-xl bg-indigo-950/20 border border-indigo-500/30 text-center space-y-1">
+                <div className="text-xs font-bold text-indigo-200">MIDNIGHT NETWORK CREDENTIAL SEAL</div>
+                <div className="text-[10px] text-slate-400">Off-Chain Private Document Witness Verified</div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-1">
+              <button
+                onClick={() => setPreviewDocument(null)}
+                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/30 cursor-pointer"
+              >
+                Close Document Preview
+              </button>
+            </div>
+
           </div>
         </div>
       )}

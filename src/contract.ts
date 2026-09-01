@@ -112,6 +112,8 @@ export class ScholarshipEligibilityContract {
     contractAddress: string = "0xmid1scholarship_verification_contract_local"
   ) {
     this.contractAddress = contractAddress;
+    this.scholarships = [];
+    this.applications = [];
     this.loadFromStorage();
   }
 
@@ -120,17 +122,26 @@ export class ScholarshipEligibilityContract {
     try {
       const storedScholarships = localStorage.getItem("midnight_scholarships");
       if (storedScholarships) {
-        this.scholarships = JSON.parse(storedScholarships, bigintReviver);
+        const parsed = JSON.parse(storedScholarships, bigintReviver);
+        if (Array.isArray(parsed)) {
+          this.scholarships = parsed;
+        }
       }
+
       const storedApplications = localStorage.getItem("midnight_applications");
       if (storedApplications) {
-        this.applications = JSON.parse(storedApplications, bigintReviver);
+        const parsedApps = JSON.parse(storedApplications, bigintReviver);
+        if (Array.isArray(parsedApps)) {
+          this.applications = parsedApps;
+        }
       }
+
       const storedRoles = localStorage.getItem("midnight_user_roles");
       if (storedRoles) {
         const rolesArr: [string, "student" | "provider"][] = JSON.parse(storedRoles);
         this.userRoles = new Map(rolesArr);
       }
+
       const storedVerifications = localStorage.getItem("midnight_verifications_count");
       if (storedVerifications) {
         this.verificationsCount = parseInt(storedVerifications, 10) || 0;
