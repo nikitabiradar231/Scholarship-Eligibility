@@ -134,17 +134,23 @@ export function App() {
     scholarshipId: string,
     marksheetFileName: string,
     incomeCertFileName: string
-  ) => {
+  ): boolean => {
     const address = walletState.address || "0xaddr_student_alex";
     const displayName = userName ? `${userName} (Student)` : `Student (${address.slice(0, 8)})`;
-    contract.submitApplication(
-      scholarshipId,
-      address,
-      displayName,
-      marksheetFileName,
-      incomeCertFileName
-    );
-    refreshState();
+    try {
+      contract.submitApplication(
+        scholarshipId,
+        address,
+        displayName,
+        marksheetFileName,
+        incomeCertFileName
+      );
+      refreshState();
+      return true;
+    } catch (err: any) {
+      alert(err.message || "Failed to submit application.");
+      return false;
+    }
   };
 
   const handleUpdateApplicationStatus = (

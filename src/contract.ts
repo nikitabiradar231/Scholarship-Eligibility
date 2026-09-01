@@ -335,11 +335,8 @@ export class ScholarshipEligibilityContract {
     marksheetFileName: string = "Marksheet_Academic_Record.pdf",
     incomeCertFileName: string = "Income_Tax_Certificate.pdf"
   ): StudentApplication {
-    const role = this.getUserRole(studentId);
-    if (role === "provider") {
-      throw new Error(`Unauthorized: Account '${studentId}' is registered as a Scholarship Provider and cannot submit student applications.`);
-    }
-    this.registerRole(studentId, "student");
+    this.userRoles.set(studentId, "student");
+    this.saveToStorage();
 
     const scholarship = this.getScholarshipById(scholarshipId);
     if (!scholarship) {

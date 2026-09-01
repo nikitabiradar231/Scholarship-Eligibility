@@ -64,9 +64,13 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
     if (!selectedScholarship) return;
     const mName = marksheetName.trim() || "Academic_Marksheet.pdf";
     const iName = incomeCertName.trim() || "Income_Certificate.pdf";
-    onSubmitApplication(selectedScholarship.id, mName, iName);
-    setSelectedScholarship(null);
-    setActiveTab("my_applications");
+    const result = onSubmitApplication(selectedScholarship.id, mName, iName);
+    if ((result as any) !== false) {
+      setSelectedScholarship(null);
+      setMarksheetName("");
+      setIncomeCertName("");
+      setActiveTab("my_applications");
+    }
   };
 
   const handleVerifySubmit = (applicationId: string, e: React.FormEvent) => {
