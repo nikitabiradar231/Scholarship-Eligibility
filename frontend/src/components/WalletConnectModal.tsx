@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Wallet, X, AlertCircle, ArrowRight, ShieldCheck } from "lucide-react";
+import { Wallet, X, AlertCircle, ArrowRight, ShieldCheck, Zap } from "lucide-react";
 
 interface WalletConnectModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onConnectOneAm: () => Promise<void>;
   onConnectLace: () => Promise<void>;
   onConnectCustomAddress: (address: string) => void;
 }
@@ -11,29 +12,57 @@ interface WalletConnectModalProps {
 export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
   isOpen,
   onClose,
+  onConnectOneAm,
   onConnectLace,
   onConnectCustomAddress
 }) => {
   const [customAddress, setCustomAddress] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isLaceLoading, setIsLaceLoading] = useState(false);
+  const [loadingType, setLoadingType] = useState<"1am" | "lace" | null>(null);
 
   if (!isOpen) return null;
 
-  const handleLaceClick = async () => {
+  const handleOneAmClick = async () => {
     setError(null);
-    setIsLaceLoading(true);
+    setLoadingType("1am");
     try {
-      await onConnectLace();
+      console.log("[WalletConnectModal] User selected 1AM Wallet Preprod.");
+      await onConnectOneAm();
+      console.log("[WalletConnectModal] 1AM Wallet connected successfully, closing modal.");
       onClose();
     } catch (err: any) {
-      if (err.message === "LACE_NOT_FOUND") {
-        setError("Lace Wallet Extension not detected in your browser. Please enter your wallet address below.");
+      console.error("[WalletConnectModal] 1AM Wallet connection error:", err);
+      if (err.message === "ONEAM_NOT_FOUND") {
+        setError("1AM Wallet extension not detected in your browser. Please install 1AM Wallet or make sure it is enabled on Midnight Preprod.");
+      } else if (err.message === "NO_WALLET_PROFILE_FOUND") {
+        setError("1AM Wallet detected! However, no wallet profile is created inside your extension yet. Please open 1AM Wallet to create or unlock your account.");
       } else {
-        setError(err.message || "Failed to connect Lace Wallet.");
+        setError(err.message || "Failed to connect 1AM Wallet on Preprod.");
       }
     } finally {
-      setIsLaceLoading(false);
+      setLoadingType(null);
+    }
+  };
+
+  const handleLaceClick = async () => {
+    setError(null);
+    setLoadingType("lace");
+    try {
+      console.log("[WalletConnectModal] User selected Midnight Lace Wallet.");
+      await onConnectLace();
+      console.log("[WalletConnectModal] Lace Wallet connected successfully, closing modal.");
+      onClose();
+    } catch (err: any) {
+      console.error("[WalletConnectModal] Lace Wallet connection error:", err);
+      if (err.message === "LACE_NO_WALLET_FOUND" || err.message === "NO_WALLET_PROFILE_FOUND") {
+        setError("Lace Extension detected! However, no wallet profile is created inside your extension yet. Please open Lace to create or unlock your account.");
+      } else if (err.message === "LACE_NOT_FOUND" || err.message === "WALLET_NOT_FOUND") {
+        setError("Midnight Lace Wallet Extension not detected in your browser. Please install Lace or enter your wallet address below.");
+      } else {
+        setError(err.message || "Failed to connect Midnight Lace Wallet.");
+      }
+    } finally {
+      setLoadingType(null);
     }
   };
 
@@ -68,7 +97,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           </div>
           <div>
             <h3 className="text-lg font-extrabold text-white tracking-tight">Connect Wallet</h3>
-            <p className="text-xs text-slate-400">Select your preferred Midnight wallet connection method</p>
+            <p className="text-xs text-slate-400">Select your Midnight Preprod wallet connection method</p>
           </div>
         </div>
 
@@ -79,11 +108,34 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           </div>
         )}
 
-        {/* Option 1: Lace Wallet Extension */}
+        {/* Wallet Provider Options */}
         <div className="space-y-3">
+          
+          {/* Option 1: 1AM Wallet Preprod */}
+          <button
+            onClick={handleOneAmClick}
+            disabled={loadingType !== null}
+            className="w-full p-4 rounded-2xl bg-gradient-to-r from-amber-950/80 to-purple-950/80 hover:from-amber-900/90 hover:to-purple-900/90 border border-amber-700/50 flex items-center justify-between text-left transition-all group cursor-pointer"
+          >
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-600/30 flex items-center justify-center border border-amber-500/30">
+                <Zap className="w-4 h-4 text-amber-300" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors flex items-center space-x-2">
+                  <span>1AM Wallet</span>
+                  <span className="px-2 py-0.5 text-[10px] font-mono bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30">PREPROD</span>
+                </div>
+                <div className="text-[11px] text-slate-400">Connect to 1AM Wallet extension on Preprod</div>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-amber-400 group-hover:translate-x-1 transition-transform" />
+          </button>
+
+          {/* Option 2: Midnight Lace Wallet */}
           <button
             onClick={handleLaceClick}
-            disabled={isLaceLoading}
+            disabled={loadingType !== null}
             className="w-full p-4 rounded-2xl bg-gradient-to-r from-indigo-950/80 to-purple-950/80 hover:from-indigo-900/90 hover:to-purple-900/90 border border-indigo-700/50 flex items-center justify-between text-left transition-all group cursor-pointer"
           >
             <div className="flex items-center space-x-3">
@@ -92,9 +144,9 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
               </div>
               <div>
                 <div className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">
-                  Midnight Lace Wallet Extension
+                  Midnight Lace Wallet
                 </div>
-                <div className="text-[11px] text-slate-400">Official browser extension permission prompt</div>
+                <div className="text-[11px] text-slate-400">Connect to Lace Wallet extension</div>
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-indigo-400 group-hover:translate-x-1 transition-transform" />
@@ -108,7 +160,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           </span>
         </div>
 
-        {/* Option 2: Enter Your Own Address */}
+        {/* Option 3: Enter Your Own Address */}
         <form onSubmit={handleCustomSubmit} className="space-y-3">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">

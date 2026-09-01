@@ -164,8 +164,15 @@ export function App() {
     return result;
   };
 
+  const handleConnectOneAmWallet = async () => {
+    console.log("[App] Connecting 1AM Wallet on Preprod...");
+    const updated = await walletAdapter.connect(undefined, "1am");
+    setWalletState(updated);
+  };
+
   const handleConnectLaceWallet = async () => {
-    const updated = await walletAdapter.connect();
+    console.log("[App] Connecting Lace Wallet on Preprod...");
+    const updated = await walletAdapter.connect(undefined, "lace");
     setWalletState(updated);
   };
 
@@ -261,6 +268,7 @@ export function App() {
       <WalletConnectModal
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
+        onConnectOneAm={handleConnectOneAmWallet}
         onConnectLace={handleConnectLaceWallet}
         onConnectCustomAddress={handleConnectCustomAddress}
       />
