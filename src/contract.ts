@@ -86,6 +86,20 @@ export interface VerificationProofResult {
   };
 }
 
+const bigintReplacer = (_key: string, value: any) => {
+  if (typeof value === "bigint") {
+    return { __type: "bigint", value: value.toString() };
+  }
+  return value;
+};
+
+const bigintReviver = (_key: string, value: any) => {
+  if (value && typeof value === "object" && value.__type === "bigint") {
+    return BigInt(value.value);
+  }
+  return value;
+};
+
 export class ScholarshipEligibilityContract {
   private scholarships: ScholarshipItem[] = [];
   private applications: StudentApplication[] = [];
@@ -98,15 +112,46 @@ export class ScholarshipEligibilityContract {
     contractAddress: string = "0xmid1scholarship_verification_contract_local"
   ) {
     this.contractAddress = contractAddress;
-    // Clean initialization: start with 0 default scholarships and applications
-    this.scholarships = [];
-    this.applications = [];
+    this.loadFromStorage();
   }
 
-  /**
-   * Permanently binds a wallet/account address to a role.
-   * Throws an error if the address is already registered to a different role.
-   */
+  public loadFromStorage() {
+    if (typeof localStorage === "undefined") return;
+    try {
+      const storedScholarships = localStorage.getItem("midnight_scholarships");
+      if (storedScholarships) {
+        this.scholarships = JSON.parse(storedScholarships, bigintReviver);
+      }
+      const storedApplications = localStorage.getItem("midnight_applications");
+      if (storedApplications) {
+        this.applications = JSON.parse(storedApplications, bigintReviver);
+      }
+      const storedRoles = localStorage.getItem("midnight_user_roles");
+      if (storedRoles) {
+        const rolesArr: [string, "student" | "provider"][] = JSON.parse(storedRoles);
+        this.userRoles = new Map(rolesArr);
+      }
+      const storedVerifications = localStorage.getItem("midnight_verifications_count");
+      if (storedVerifications) {
+        this.verificationsCount = parseInt(storedVerifications, 10) || 0;
+      }
+    } catch (e) {
+      console.warn("[ScholarshipContract] Storage load warning:", e);
+    }
+  }
+
+  public saveToStorage() {
+    if (typeof localStorage === "undefined") return;
+    try {
+      localStorage.setItem("midnight_scholarships", JSON.stringify(this.scholarships, bigintReplacer));
+      localStorage.setItem("midnight_applications", JSON.stringify(this.applications, bigintReplacer));
+      localStorage.setItem("midnight_user_roles", JSON.stringify(Array.from(this.userRoles.entries())));
+      localStorage.setItem("midnight_verifications_count", this.verificationsCount.toString());
+    } catch (e) {
+      console.warn("[ScholarshipContract] Storage save warning:", e);
+    }
+  }
+
   public registerRole(address: string, role: "student" | "provider"): "student" | "provider" {
     const existingRole = this.userRoles.get(address);
     if (existingRole && existingRole !== role) {
@@ -115,6 +160,7 @@ export class ScholarshipEligibilityContract {
       );
     }
     this.userRoles.set(address, role);
+    this.saveToStorage();
     return role;
   }
 
@@ -204,6 +250,7 @@ export class ScholarshipEligibilityContract {
       createdAt: new Date().toISOString()
     };
     this.scholarships.push(newScholarship);
+    this.saveToStorage();
     return newScholarship;
   }
 
@@ -230,6 +277,7 @@ export class ScholarshipEligibilityContract {
 
     this.scholarships = this.scholarships.filter((s) => s.id !== scholarshipId);
     this.applications = this.applications.filter((a) => a.scholarshipId !== scholarshipId);
+    this.saveToStorage();
     return this.getLedgerState();
   }
 
@@ -262,6 +310,7 @@ export class ScholarshipEligibilityContract {
     scholarship.name = name;
     scholarship.minimumMarks = BigInt(minMarks);
     scholarship.maximumFamilyIncome = BigInt(maxIncome);
+    this.saveToStorage();
     return this.getLedgerState();
   }
 
@@ -322,6 +371,7 @@ export class ScholarshipEligibilityContract {
       this.applications.push(newApp);
     }
 
+    this.saveToStorage();
     return newApp;
   }
 
@@ -355,6 +405,7 @@ export class ScholarshipEligibilityContract {
       app.rejectionReason = rejectionReason || "Submitted documents did not match official records or were incomplete.";
     }
 
+    this.saveToStorage();
     return app;
   }
 
@@ -409,6 +460,7 @@ export class ScholarshipEligibilityContract {
 
     const proofDigest = this.generateProofDigest(marks, income, isEligible);
     app.proofHash = proofDigest;
+    this.saveToStorage();
 
     return {
       isEligible,

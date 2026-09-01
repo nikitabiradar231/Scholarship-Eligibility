@@ -42,10 +42,23 @@ export function App() {
   const [applications, setApplications] = useState<StudentApplication[]>(() => contract.getApplicationsForProvider());
 
   const refreshState = () => {
+    contract.loadFromStorage();
     setPublicState(contract.getLedgerState());
     setScholarships(contract.getScholarships());
     setApplications(contract.getApplicationsForProvider());
   };
+
+  useEffect(() => {
+    refreshState();
+  }, [activeTab, currentRole, walletState.address]);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      refreshState();
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   // Sync role and username whenever wallet address changes
   useEffect(() => {
