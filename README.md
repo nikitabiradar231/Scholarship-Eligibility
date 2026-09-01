@@ -17,6 +17,14 @@ The application allows students to prove their eligibility for academic scholars
 
 ---
 
+## 🎥 Project Demo Video
+
+This video demonstrates the complete workflow and functionality of the project, showcasing its key features and implementation.
+
+▶️ [Watch Demo Video](https://drive.google.com/file/d/1PDimWU0LdBNXhSAvg0VNqeSYoWi-xLO-/view?usp=drive_link)
+
+---
+
 ## Problem Statement
 
 Traditional scholarship application platforms require students to upload raw, sensitive documents—such as academic grade transcripts, family income certificates, and tax returns—directly to centralized databases or public ledgers.
@@ -282,14 +290,6 @@ ScholarShield is being built publicly in the open. Follow our development journe
 
 ```text
 Product X Profile: https://x.com/ScholarShieldZ
-```
-
----
-
-## Demo Video
-
-```text
-Demo Video: To be added
 ```
 
 ---
