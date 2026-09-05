@@ -2,13 +2,13 @@
 
 > **Privacy-Preserving Zero-Knowledge Smart Contract DApp built on the Midnight Network — Level 4: Waxing Gibbous**
 
-[![Midnight Network](https://img.shields.io/badge/Midnight-Network-6f42c1?style=flat-square)](https://midnight.network/)
-[![Compact](https://img.shields.io/badge/Smart%20Contract-Compact-blue?style=flat-square)](https://docs.midnight.network/)
-[![React](https://img.shields.io/badge/Frontend-React%2018-61dafb?style=flat-square&logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![Vitest](https://img.shields.io/badge/Tests-Vitest-6e9f18?style=flat-square)](https://vitest.dev/)
-[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088ff?style=flat-square&logo=githubactions)](https://github.com/features/actions)
-[![Deployment](https://img.shields.io/badge/Deployment-Vercel-black?style=flat-square&logo=vercel)](https://vercel.com/)
+[![CI/CD](https://github.com/nikitabiradar231/Scholarship-Eligibility/actions/workflows/ci.yml/badge.svg)](https://github.com/nikitabiradar231/Scholarship-Eligibility/actions/workflows/ci.yml)
+
+[![Midnight Network](https://img.shields.io/badge/Midnight-Compact%20ZK-indigo?style=flat-square)](#technology-stack)
+
+[![Level 4](https://img.shields.io/badge/Level%204-Preprod%20MVP-purple?style=flat-square)](#project-status)
+
+[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
 ---
 
