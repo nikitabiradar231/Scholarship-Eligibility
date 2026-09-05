@@ -1,0 +1,37 @@
+name: Local CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master, dev ]
+
+jobs:
+  build-and-test:
+    name: Build & Verify Compact Smart Contract & Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Root Backend Dependencies
+        run: npm install
+
+      - name: Compile TypeScript Smart Contract Layer
+        run: npm run build:contract
+
+      - name: Run Privacy-Preserving Contract Unit Tests
+        run: npm test
+
+      - name: Install Frontend Dependencies
+        run: npm --prefix frontend install
+
+      - name: Build React + Vite Production Bundle
+        run: npm --prefix frontend run build
