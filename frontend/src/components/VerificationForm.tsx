@@ -4,7 +4,7 @@ import { PublicLedgerState, VerificationProofResult } from "../../../src/contrac
 
 interface VerificationFormProps {
   publicState: PublicLedgerState;
-  onRunVerification: (marks: number, income: number) => VerificationProofResult;
+  onRunVerification: (marks: number, income: number) => VerificationProofResult | Promise<VerificationProofResult>;
   onVerificationComplete: (result: VerificationProofResult) => void;
 }
 
@@ -17,18 +17,20 @@ export const VerificationForm: React.FC<VerificationFormProps> = ({
   const [income, setIncome] = useState<number | "">(250000);
   const [isEvaluating, setIsEvaluating] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (marks === "" || income === "") return;
 
     setIsEvaluating(true);
 
-    // Simulate Compact ZK circuit proof generation latency
-    setTimeout(() => {
-      const proofResult = onRunVerification(Number(marks), Number(income));
+    try {
+      const proofResult = await onRunVerification(Number(marks), Number(income));
       setIsEvaluating(false);
       onVerificationComplete(proofResult);
-    }, 900);
+    } catch (err: any) {
+      setIsEvaluating(false);
+      alert(`Proof Generation Error: ${err?.message || err}`);
+    }
   };
 
   const loadPreset = (presetMarks: number, presetIncome: number) => {

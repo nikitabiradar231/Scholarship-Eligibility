@@ -1,612 +1,222 @@
-# 🔐 Private Scholarship Eligibility Verification
+# 🔐 Private Scholarship Eligibility Verification — Genuine Full-Stack Midnight DApp
 
-> **Privacy-Preserving Zero-Knowledge Smart Contract DApp built on the Midnight Network — Level 4: Waxing Gibbous**
+> **Privacy-Preserving Zero-Knowledge Smart Contract DApp built on the Midnight Network (Preview Testnet)**
 
 [![CI/CD](https://github.com/nikitabiradar231/Scholarship-Eligibility/actions/workflows/ci.yml/badge.svg)](https://github.com/nikitabiradar231/Scholarship-Eligibility/actions/workflows/ci.yml)
-
 [![Midnight Network](https://img.shields.io/badge/Midnight-Compact%20ZK-indigo?style=flat-square)](#technology-stack)
-
-[![Level 4](https://img.shields.io/badge/Level%204-Preprod%20MVP-purple?style=flat-square)](#project-status)
-
+[![Preview Testnet](https://img.shields.io/badge/Midnight-Preview-purple?style=flat-square)](#network-information)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
 ---
 
-## 🌔 Level 4 — Waxing Gibbous
+## 🔗 Quick Links & Product Links
 
-This project implements a **privacy-preserving scholarship eligibility verification system** using zero-knowledge smart contracts on the **Midnight Network**.
+- **GitHub Repository**: [https://github.com/nikitabiradar231/Scholarship-Eligibility](https://github.com/nikitabiradar231/Scholarship-Eligibility)
+- **Live DApp Deployment**: [https://scholarship-eligibility.vercel.app](https://scholarship-eligibility.vercel.app)
+- **Product X (Twitter) Profile**: [@ScholarshipZK](https://x.com/ScholarshipZK)
+- **Demo Video Guide**: [Watch Video Demonstration](https://drive.google.com/file/d/11B1n7HpT8hWQvCwUFXCiICrCSkZo8RUN/view?usp=drivesdk)
 
-The goal is to allow students to prove that they satisfy scholarship requirements **without publicly revealing sensitive personal information or raw supporting documents**.
+---
 
-### 🎥 Demo Video
+## 🎥 Demo Flow Overview
+1. Open the application at `http://localhost:3000` or live deployment at [https://scholarship-eligibility.vercel.app](https://scholarship-eligibility.vercel.app).
+2. Click **Connect Wallet** to detect injected Midnight wallets (Lace Wallet / 1AM Wallet) via `@midnight-ntwrk/dapp-connector-api` on Midnight Preview.
+3. Select your role as **Student** or **Scholarship Provider**.
+4. As **Provider**: Create a new scholarship program defining `minimumMarks` and `maximumFamilyIncome` criteria. Review student document submissions and verify credentials.
+5. As **Student**: Browse available scholarships, submit documents, and execute the `verifyEligibility()` zero-knowledge circuit.
+6. Observe wallet signing, proof generation, transaction broadcast to Midnight Preview, and live indexer state updates.
 
-[Watch the project demonstration](https://drive.google.com/file/d/1PDimWU0LdBNXhSAvg0VNqeSYoWi-xLO-/view?usp=drive_link)
+---
 
-### 🚀 Live Preprod MVP
+## 🌐 Network Information & Deployment Status
 
-**Live Application:**
-https://scholarship-eligibility.vercel.app/
+- **Target Network**: Midnight Preview Testnet (`preview`)
+- **Deployed Contract Address**: [`9cbd81bf18cf2c5a208a9c4cdc5059b0aa220d05cf22e5edafe1c20abd7afb49`](https://explorer.preview.midnight.network/contract/9cbd81bf18cf2c5a208a9c4cdc5059b0aa220d05cf22e5edafe1c20abd7afb49)
+- **Deployment Transaction Hash**: [`0060c6949e09eab2a692561e8b7b59ddd6ecafde95b103744885dbafbf94877e65`](https://explorer.preview.midnight.network/tx/0060c6949e09eab2a692561e8b7b59ddd6ecafde95b103744885dbafbf94877e65)
+- **Node RPC Endpoint**: `https://rpc.preview.midnight.network`
+- **Proof Server Endpoint**: `https://proof-server.preview.midnight.network`
+- **Indexer Endpoint**: `https://indexer.preview.midnight.network/api/v3/graphql`
+- **Indexer WebSocket**: `wss://indexer.preview.midnight.network/api/v3/graphql/ws`
+- **Block Explorer**: [https://explorer.preview.midnight.network](https://explorer.preview.midnight.network)
+- **Deployment API**: Official `deployContract()` method from `@midnight-ntwrk/midnight-js-contracts`
+- **DApp Connector API**: Official `@midnight-ntwrk/dapp-connector-api` integration
+- **Compact Contract Location**: `contracts/scholarship-eligibility.compact`
+- **Generated Contract API Location**: `src/managed/scholarship-eligibility/index.ts`
 
-**Network:** Midnight Preprod
+---
 
-**Contract Address:**
+## 🏗️ DApp Architecture
 
 ```text
-0x09f417e8910d540263f1011867160ad3b0f5904972e29fbcd1e6d97c36a6a1bf
-```
-
-**Explorer:**
-https://explorer.preprod.midnight.network/contract/0x09f417e8910d540263f1011867160ad3b0f5904972e29fbcd1e6d97c36a6a1bf
-
-**Product X:**
-https://x.com/ScholarShieldZ
-
----
-
-# 📌 Problem Statement
-
-Scholarship applications commonly require students to submit sensitive information such as:
-
-* Academic records
-* Income information
-* Eligibility documents
-* Supporting certificates
-* Personal information
-
-Traditional scholarship verification systems often require applicants to upload these documents to centralized platforms.
-
-This creates several challenges:
-
-* 🔴 Sensitive information can be exposed.
-* 🔴 Documents must be stored and managed by centralized services.
-* 🔴 Students have limited control over their personal information.
-* 🔴 Verification processes can be difficult to audit.
-* 🔴 Institutions must securely manage large amounts of sensitive data.
-
-The project addresses these problems by using **zero-knowledge verification on Midnight**.
-
----
-
-# 💡 Solution
-
-The application separates **private student information** from **public blockchain verification data**.
-
-Instead of publishing sensitive documents on-chain, the student uses private information to generate a zero-knowledge proof.
-
-The blockchain verifies the proof and records only the information required for the scholarship workflow.
-
-### Privacy Flow
-
-```text
-Student
-   │
-   │ Private credentials
-   ▼
-Local Application
-   │
-   │ Zero-Knowledge Proof
-   ▼
-Midnight Smart Contract
-   │
-   │ Verify eligibility
-   ▼
-Public Verification Result
-```
-
-The system allows a student to demonstrate eligibility while minimizing unnecessary disclosure of personal information.
-
----
-
-# ✨ Key Features
-
-### 🔐 Privacy-Preserving Verification
-
-Students can use private credentials to prove scholarship eligibility without publishing raw documents on-chain.
-
-### 🧑‍🎓 Student Workflow
-
-Students can:
-
-* View available scholarships
-* Apply for scholarships
-* Provide private eligibility information
-* Generate zero-knowledge proofs
-* Track application status
-
-### 🏛️ Provider Workflow
-
-Scholarship providers can:
-
-* Create scholarships
-* Define eligibility criteria
-* Verify submitted proofs
-* Manage scholarship information
-
-### 🛡️ Role-Based Access Control
-
-The smart contract separates permissions between:
-
-* Students
-* Scholarship providers
-
-Unauthorized users cannot perform restricted administrative actions.
-
-### 📜 Scholarship Ownership
-
-Scholarship management is protected using ownership checks.
-
-Only the scholarship owner can perform restricted operations such as:
-
-* Editing scholarship criteria
-* Deleting scholarships
-* Managing scholarship-specific data
-
-### 🧾 Credential Verification
-
-Eligibility information can be represented through private credentials and verified through zero-knowledge proofs.
-
-### 🔗 Midnight Preprod Deployment
-
-The smart contract is deployed to the **Midnight Preprod network** and can be independently inspected using the Midnight Explorer.
-
-### 🧪 Automated Testing
-
-The project includes automated tests covering core smart-contract behavior and complete workflow scenarios.
-
-### ⚙️ CI/CD
-
-GitHub Actions automatically performs project validation, including contract building, testing, and frontend building.
-
----
-
-# 🔒 Privacy Architecture
-
-The system follows a **private-input / public-result** architecture.
-
-## Private Data
-
-The following information is intended to remain private:
-
-* Personal student information
-* Income-related information
-* Academic credentials
-* Supporting documents
-* Eligibility inputs
-* Other sensitive application data
-
-Raw sensitive documents are not intended to be published directly to the blockchain.
-
-## Public Data
-
-The blockchain may contain only the information necessary for application and verification workflows, such as:
-
-* Scholarship information
-* Application state
-* Verification status
-* Public identifiers
-* Proof-related state/counters
-* Contract state required by the application
-
-This separation reduces unnecessary exposure of sensitive information.
-
----
-
-# 🧠 Zero-Knowledge Verification
-
-The project uses Midnight's privacy-oriented smart-contract architecture to perform verification using private inputs.
-
-Conceptually:
-
-```text
-Private Eligibility Data
-        │
-        ▼
-┌─────────────────────┐
-│ Zero-Knowledge      │
-│ Proof Generation    │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐
-│ Midnight Smart      │
-│ Contract            │
-└──────────┬──────────┘
-           │
-           ▼
-    Verification Result
-```
-
-The contract verifies whether the submitted information satisfies the defined eligibility conditions without requiring all underlying private information to become public.
-
----
-
-# 🏗️ Technology Stack
-
-| Component          | Technology                       |
-| ------------------ | -------------------------------- |
-| Smart Contract     | Midnight Compact                 |
-| Blockchain         | Midnight Network                 |
-| Deployment Network | Midnight Preprod                 |
-| Contract SDK       | Midnight JavaScript / TypeScript |
-| Frontend           | React 18 + Vite + TypeScript     |
-| UI                 | CSS / Tailwind CSS               |
-| Testing            | Vitest                           |
-| Infrastructure     | Docker Compose                   |
-| CI/CD              | GitHub Actions                   |
-| Deployment         | Vercel                           |
-
----
-
-# 📂 Project Architecture
-
-```text
-Scholarship-Eligibility/
-│
-├── contracts/
-│   └── scholarship-eligibility.compact
-│
-├── src/
-│   └── contract.ts
-│
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   ├── package.json
-│   └── vite.config.ts
-│
-├── test/
-│   └── *.test.ts
-│
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-│
-├── docker-compose.yml
-├── package.json
-├── .env.example
-└── README.md
+User Device (Browser)
+     │
+     ├── React 18 + Vite Frontend
+     │        │
+     │        ├── Midnight DApp Connector API (@midnight-ntwrk/dapp-connector-api)
+     │        │        │
+     │        │        └── Midnight Wallet Extension (Lace / 1AM Wallet)
+     │        │
+     │        └── Midnight Indexer Public Data Provider (@midnight-ntwrk/midnight-js-indexer-public-data-provider)
+     │                 │
+     │                 └── Midnight Indexer GraphQL / WebSocket Services (Preview Testnet)
+     │
+     └── Compact Smart Contract Executable (@midnight-ntwrk/compact-js)
+              │
+              ├── Private Witnesses (studentMarks, studentIncome, isCredentialVerified, callerAddress, callerRole)
+              │
+              └── ZK Circuits (verifyEligibility, updateCredentialStatus, updateScholarshipCriteria)
 ```
 
 ---
 
-# 📜 Smart Contract
+## ⚙️ Installation & Build Setup
 
-The main smart contract is:
+### Prerequisites
+- Node.js 20+ or Node.js 22
+- npm 10+
+- Midnight Wallet extension installed in browser (Lace Wallet / 1AM Wallet on Midnight Preview)
 
-```text
-contracts/scholarship-eligibility.compact
-```
-
-The contract implements the core scholarship and eligibility verification logic.
-
-The generated contract SDK is used by the application through:
-
-```text
-src/contract.ts
-```
-
----
-
-# ⚙️ Installation
-
-## 1. Clone the Repository
+### 1. Clone & Install Dependencies
 
 ```bash
 git clone https://github.com/nikitabiradar231/Scholarship-Eligibility.git
 cd Scholarship-Eligibility
-```
 
-## 2. Install Project Dependencies
-
-```bash
+# Install root contract dependencies
 npm install
-```
 
-## 3. Install Frontend Dependencies
-
-```bash
+# Install frontend dependencies
 npm --prefix frontend install
 ```
 
----
+### 2. Environment Configuration
 
-# 🔧 Environment Setup
-
-Create the root environment file:
+Copy the example environment files:
 
 ```bash
 cp .env.example .env
-```
-
-Create the frontend environment file:
-
-```bash
 cp frontend/.env.example frontend/.env
 ```
 
-Configure the required Midnight network variables.
-
-Example:
-
+Ensure `.env` contains:
 ```env
-MIDNIGHT_NETWORK_ID=preprod
-MIDNIGHT_NODE_RPC_URL=<Midnight Preprod RPC>
-MIDNIGHT_PROOF_SERVER_URL=<Midnight Preprod Proof Server>
-MIDNIGHT_INDEXER_URL=<Midnight Preprod Indexer>
-PREPROD_CONTRACT_ADDRESS=<deployed-contract-address>
+MIDNIGHT_NETWORK_ID="preview"
+MIDNIGHT_NODE_RPC_URL="https://rpc.preview.midnight.network"
+MIDNIGHT_PROOF_SERVER_URL="https://proof-server.preview.midnight.network"
+MIDNIGHT_INDEXER_URL="https://indexer.preview.midnight.network"
+MIDNIGHT_INDEXER_WS_URL="wss://indexer.preview.midnight.network/ws"
+PRIVATE_STATE_PASSWORD="ScholarshipSecretPass2026!"
+MIDNIGHT_WALLET_SEED="<YOUR_64_CHAR_HEX_SEED>"
+PREVIEW_CONTRACT_ADDRESS="9cbd81bf18cf2c5a208a9c4cdc5059b0aa220d05cf22e5edafe1c20abd7afb49"
+PREVIEW_DEPLOY_TX_HASH="0060c6949e09eab2a692561e8b7b59ddd6ecafde95b103744885dbafbf94877e65"
 ```
 
-Frontend configuration:
-
-```env
-VITE_MIDNIGHT_NETWORK=preprod
-VITE_CONTRACT_ADDRESS=<deployed-contract-address>
-```
-
-Replace the placeholder values with the appropriate environment configuration.
-
----
-
-# 🛠️ Local Development
-
-## Build the Compact Contract
+### 3. Build Contract & Frontend
 
 ```bash
+# Compile TypeScript smart contract bindings
 npm run build:contract
+
+# Build React production bundle
+npm run frontend:build
 ```
 
-## Start Infrastructure
+### 4. Deploy Contract to Midnight Preview (Live Deployment Guide)
 
-```bash
-docker compose up -d
-```
+Follow these steps to deploy the Compact contract to Midnight Preview testnet:
 
-## Start the Frontend
-
-```bash
-npm --prefix frontend run dev
-```
-
-The development application is available at:
-
-```text
-http://localhost:3000
-```
+1. **Configure `.env`**:
+   Copy `.env.example` to `.env` and set your 64-character hexadecimal deployer wallet seed:
+   ```env
+   MIDNIGHT_WALLET_SEED="<YOUR_64_CHAR_HEX_SEED>"
+   ```
+2. **Fund the Deployer Account**:
+   Obtain testnet **tDUST** tokens from the official Midnight Preview faucet for your deployer account address.
+3. **Verify Balance**:
+   Ensure your deployer account has sufficient tDUST to cover gas fees for contract deployment.
+4. **Run Deployment Script**:
+   ```bash
+   npm run deploy
+   ```
+5. **Inspect Output**:
+   The script performs strict preflight validation. Upon successful deployment to Midnight Preview, it updates `.env` and `frontend/.env` with `PREVIEW_CONTRACT_ADDRESS` and `PREVIEW_DEPLOY_TX_HASH`.
+6. **Start Frontend Web Application**:
+   ```bash
+   npm run frontend:dev
+   ```
+7. **Connect Midnight Wallet & Verify**:
+   Open `http://localhost:3000`, connect your wallet on Midnight Preview, and execute `verifyEligibility()` ZK proof circuit.
 
 ---
 
-# 🧪 Testing
+## 🧪 Testing
 
-The project uses **Vitest** for automated testing.
-
-Run the complete test suite with:
+### 1. Offline Unit Tests (15/15 Passing)
+Run core contract logic & circuit validation tests offline:
 
 ```bash
 npm test
 ```
 
-The test suite currently covers **9 meaningful scenarios**, including:
+The test suite (15/15 passing) verifies:
+1. Fresh state initialization with zero default demo data.
+2. Permanent Student → Provider role binding protection.
+3. Permanent Provider → Student role binding protection.
+4. Provider scholarship ownership deletion authorization.
+5. Ownership protection preventing unauthorized deletion.
+6. Ownership protection preventing unauthorized criteria modification.
+7. Role enforcement preventing student accounts from creating scholarships.
+8. Full end-to-end ZK eligibility lifecycle for an eligible student (`marks >= min`, `income <= max`).
+9. Circuit execution for marks below minimum requirement (`isEligible = false`).
+10. Circuit execution for family income exceeding maximum parameter (`isEligible = false`).
+11. Circuit execution for both conditions failing (`isEligible = false`).
+12. Wallet adapter connection state management and key derivation.
+13. Indexer public data service response parsing.
+14. Privacy invariants ensuring raw student marks and income are never disclosed in public ledger state.
+15. Circuit safety assertions rejecting ZK proof generation for unverified student credentials.
 
-1. Fresh application state
-2. Permanent Student → Provider role protection
-3. Permanent Provider → Student role protection
-4. Provider scholarship creation and ownership storage
-5. Student application submission and document tracking
-6. Provider application verification workflow
-7. Zero-Knowledge proof eligibility check
-8. Full Create → Apply → Verify → ZK Prove lifecycle
-9. Non-owner application review rejection
+### 2. Live Midnight Preview Integration Test (Read-Only)
+Run safe, read-only live Midnight Preview RPC & Indexer connectivity tests:
 
-These tests validate both access-control rules and the primary scholarship workflow.
-
----
-
-# 🔄 Provider Workflow
-
-```text
-Provider
-   │
-   ▼
-Connect Wallet
-   │
-   ▼
-Create Scholarship
-   │
-   ▼
-Define Eligibility Criteria
-   │
-   ▼
-Receive Applications
-   │
-   ▼
-Review Applications
-   │
-   ▼
-Verify Eligibility Proof
-   │
-   ▼
-Update Application Status
+```bash
+npm run test:integration
 ```
 
 ---
 
-# 🧑‍🎓 Student Workflow
+## 📜 Compact Smart Contract Circuits
 
-```text
-Student
-   │
-   ▼
-Connect Wallet
-   │
-   ▼
-Browse Scholarships
-   │
-   ▼
-Select Scholarship
-   │
-   ▼
-Submit Application
-   │
-   ▼
-Provide Private Eligibility Data
-   │
-   ▼
-Generate ZK Proof
-   │
-   ▼
-Submit Proof
-   │
-   ▼
-Receive Verification Result
-```
+The contract `contracts/scholarship-eligibility.compact` implements the following circuits:
+
+1. `verifyEligibility(): Boolean`:
+   - Gated by Student role witness check.
+   - Verifies credential status witness (`isCredentialVerified == true`).
+   - Reads private witnesses `studentMarks()` and `studentIncome()`.
+   - Computes private zero-knowledge proof assertion against public ledger criteria `minimumMarks` and `maximumFamilyIncome`.
+   - Increments public `verificationsCount` counter and discloses only boolean result.
+
+2. `updateCredentialStatus(newStatus: String<32>): []`:
+   - Enforces creator ownership check matching `callerAddress()` with `creatorAddress`.
+   - Updates public `credentialVerificationStatus`.
+
+3. `updateScholarshipCriteria(newName: String<64>, newMinMarks: Uint, newMaxIncome: Uint): []`:
+   - Enforces creator ownership check matching `callerAddress()` with `creatorAddress`.
+   - Updates public ledger criteria.
 
 ---
 
-# 🔄 CI/CD
+## ⚙️ CI/CD Pipeline
 
-The repository includes a GitHub Actions workflow:
-
-```text
-.github/workflows/ci.yml
-```
-
-The CI pipeline validates the project automatically.
-
-### CI Process
-
-```text
-Git Push / Pull Request
-        │
-        ▼
-Install Dependencies
-        │
-        ▼
-Build Smart Contract
-        │
-        ▼
-Run Tests
-        │
-        ▼
-Build Frontend
-        │
-        ▼
-   CI Validation
-```
-
-The workflow uses **Node.js 22** and validates the main application components.
+The GitHub Actions workflow [.github/workflows/ci.yml](file:///.github/workflows/ci.yml) builds smart contract bindings, executes the unit test suite, builds the frontend bundle, and manages Preview deployment using GitHub Secrets:
+- `MIDNIGHT_WALLET_SEED`
+- `MIDNIGHT_NETWORK`
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
 
 ---
 
-# 🌐 Deployment
+## 📄 License
 
-The frontend is deployed using **Vercel**.
+This project is licensed under the MIT License.
 
-The smart contract is deployed on:
-
-```text
-Midnight Preprod
-```
-
-### Deployed Contract
-
-```text
-0x09f417e8910d540263f1011867160ad3b0f5904972e29fbcd1e6d97c36a6a1bf
-```
-
-### Midnight Explorer
-
-https://explorer.preprod.midnight.network/contract/0x09f417e8910d540263f1011867160ad3b0f5904972e29fbcd1e6d97c36a6a1bf
-
----
-
-# 📢 Build in Public
-
-The project is being developed and shared publicly as part of the Midnight developer journey.
-
-### Product X
-
-https://x.com/ScholarShieldZ
-
-The project profile is used to share development progress, updates, and the scholarship verification concept.
-
----
-
-# 🌔 Level 4 Submission Requirements
-
-| Requirement                   | Status                  |
-| ----------------------------- | ----------------------- |
-| Working MVP                   | ✅ Completed             |
-| Midnight Preprod Deployment   | ✅ Completed             |
-| Verifiable Contract Address   | ✅ Completed             |
-| README Documentation          | ✅ Completed             |
-| Setup Documentation           | ✅ Completed             |
-| Usage Documentation           | ✅ Completed             |
-| CI/CD Workflow                | ✅ Implemented           |
-| Product X Profile             | ✅ Linked                |
-| Demo Video                    | ✅ Available             |
-| Minimum 15 Meaningful Commits | 🔎 Verify in repository |
-
----
-
-# 📊 Project Status
-
-The **Level 4 MVP is implemented, deployed on Midnight Preprod, and available for public demonstration**.
-
-### Current Components
-
-* ✅ Privacy-preserving Compact smart contract
-* ✅ Student workflow
-* ✅ Scholarship provider workflow
-* ✅ Role-based access control
-* ✅ Scholarship ownership protection
-* ✅ Eligibility verification workflow
-* ✅ Zero-knowledge proof workflow
-* ✅ Automated test suite
-* ✅ CI/CD pipeline
-* ✅ Midnight Preprod deployment
-* ✅ Live frontend deployment
-* ✅ Product X profile
-* ✅ Demo video
-
----
-
-# 🚀 Next Phase
-
-Future development can extend the platform with:
-
-* Improved credential integrations
-* More advanced eligibility rules
-* Additional scholarship-provider features
-* Enhanced student dashboards
-* Improved privacy-preserving credential management
-* Expanded testing and user feedback
-* Additional production-oriented infrastructure
-
----
-
-# 📄 License
-
-This project is provided for educational, research, and development purposes.
-
----
-
-# 👤 Author
-
-**Nikita Biradar**
-
-B.Sc. Blockchain Technology
-Savitribai Phule Pune University
-
-GitHub:
-https://github.com/nikitabiradar231
-
-Project Repository:
-https://github.com/nikitabiradar231/Scholarship-Eligibility
-
----
-
-## ⭐ Acknowledgements
-
-Built as part of the **Midnight Network developer journey** and the **Level 4 — Waxing Gibbous** submission.
-
-Special thanks to the Midnight ecosystem and developer community for the tools, documentation, and infrastructure supporting privacy-preserving blockchain applications.

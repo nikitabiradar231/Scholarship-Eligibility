@@ -33,7 +33,7 @@ interface StudentPortalProps {
     applicationId: string,
     marks: number,
     income: number
-  ) => VerificationProofResult;
+  ) => VerificationProofResult | Promise<VerificationProofResult>;
   onOpenPrivacyModal: () => void;
 }
 
@@ -73,16 +73,19 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
     }
   };
 
-  const handleVerifySubmit = (applicationId: string, e: React.FormEvent) => {
+  const handleVerifySubmit = async (applicationId: string, e: React.FormEvent) => {
     e.preventDefault();
     if (marksInput === "" || incomeInput === "") return;
 
     setIsEvaluating(true);
-    setTimeout(() => {
-      const res = onRunVerification(applicationId, Number(marksInput), Number(incomeInput));
-      setIsEvaluating(false);
+    try {
+      const res = await onRunVerification(applicationId, Number(marksInput), Number(incomeInput));
       setVerificationResult(res);
-    }, 700);
+    } catch (err: any) {
+      alert(`Proof Generation Failed: ${err?.message || err}`);
+    } finally {
+      setIsEvaluating(false);
+    }
   };
 
   const getStatusBadge = (status: ApplicationStatus) => {

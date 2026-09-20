@@ -26,18 +26,18 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     setError(null);
     setLoadingType("1am");
     try {
-      console.log("[WalletConnectModal] User selected 1AM Wallet Preprod.");
+      console.log("[WalletConnectModal] User selected 1AM Wallet Preview.");
       await onConnectOneAm();
       console.log("[WalletConnectModal] 1AM Wallet connected successfully, closing modal.");
       onClose();
     } catch (err: any) {
       console.error("[WalletConnectModal] 1AM Wallet connection error:", err);
       if (err.message === "ONEAM_NOT_FOUND") {
-        setError("1AM Wallet extension not detected in your browser. Please install 1AM Wallet or make sure it is enabled on Midnight Preprod.");
+        setError("1AM Wallet extension not detected in your browser. Please install 1AM Wallet or make sure it is enabled on Midnight Preview.");
       } else if (err.message === "NO_WALLET_PROFILE_FOUND") {
         setError("1AM Wallet detected! However, no wallet profile is created inside your extension yet. Please open 1AM Wallet to create or unlock your account.");
       } else {
-        setError(err.message || "Failed to connect 1AM Wallet on Preprod.");
+        setError(err.message || "Failed to connect 1AM Wallet on Preview.");
       }
     } finally {
       setLoadingType(null);
@@ -97,7 +97,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
           </div>
           <div>
             <h3 className="text-lg font-extrabold text-white tracking-tight">Connect Wallet</h3>
-            <p className="text-xs text-slate-400">Select your Midnight Preprod wallet connection method</p>
+            <p className="text-xs text-slate-400">Select your Midnight Preview wallet connection method</p>
           </div>
         </div>
 
@@ -111,7 +111,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
         {/* Wallet Provider Options */}
         <div className="space-y-3">
           
-          {/* Option 1: 1AM Wallet Preprod */}
+          {/* Option 1: 1AM Wallet Preview */}
           <button
             onClick={handleOneAmClick}
             disabled={loadingType !== null}
@@ -124,9 +124,9 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
               <div>
                 <div className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors flex items-center space-x-2">
                   <span>1AM Wallet</span>
-                  <span className="px-2 py-0.5 text-[10px] font-mono bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30">PREPROD</span>
+                  <span className="px-2 py-0.5 text-[10px] font-mono bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30">PREVIEW</span>
                 </div>
-                <div className="text-[11px] text-slate-400">Connect to 1AM Wallet extension on Preprod</div>
+                <div className="text-[11px] text-slate-400">Connect to 1AM Wallet extension on Preview</div>
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-amber-400 group-hover:translate-x-1 transition-transform" />
@@ -170,7 +170,7 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
               type="text"
               value={customAddress}
               onChange={(e) => setCustomAddress(e.target.value)}
-              placeholder="e.g. 0x09f417... or your address"
+              placeholder="Enter your Midnight address (mn_...)"
               className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition-all"
             />
           </div>
@@ -187,3 +187,4 @@ export const WalletConnectModal: React.FC<WalletConnectModalProps> = ({
     </div>
   );
 };
+

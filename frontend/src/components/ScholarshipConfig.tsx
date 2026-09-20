@@ -201,7 +201,7 @@ export const ScholarshipConfig: React.FC<ScholarshipConfigProps> = ({
             Total Ledger Verifications Executed
           </span>
           <div className="text-2xl font-extrabold text-white font-mono mt-0.5">
-            {publicState.verificationsCount} Verification Proofs
+            {publicState.verificationsCount.toString()} Verification Proofs
           </div>
         </div>
 
@@ -210,7 +210,7 @@ export const ScholarshipConfig: React.FC<ScholarshipConfigProps> = ({
             Latest Result Disclosed
           </span>
           <div className="mt-0.5">
-            {publicState.verificationsCount === 0 ? (
+            {publicState.verificationsCount === 0n ? (
               <span className="text-xs font-mono text-slate-400">No verifications yet</span>
             ) : publicState.latestVerificationResult ? (
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">

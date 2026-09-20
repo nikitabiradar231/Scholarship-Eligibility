@@ -7,9 +7,11 @@
   "scripts": {
     "compile": "npx -y @midnight-ntwrk/compactc contracts/scholarship-eligibility.compact contracts/managed/scholarship-eligibility",
     "build:contract": "tsc",
+    "build": "npm run build:contract",
     "deploy": "npx tsx src/deploy.ts",
     "test": "vitest run tests/scholarship-eligibility.test.ts",
     "test:watch": "vitest",
+    "test:integration": "vitest run tests/preview-integration.test.ts",
     "frontend:dev": "npm --prefix frontend run dev",
     "frontend:build": "npm --prefix frontend run build"
   },

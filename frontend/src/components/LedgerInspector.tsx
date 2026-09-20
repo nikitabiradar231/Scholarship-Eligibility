@@ -114,7 +114,7 @@ export const LedgerInspector: React.FC<LedgerInspectorProps> = ({
 
               <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 flex justify-between items-center">
                 <span className="text-slate-400">verificationsCount</span>
-                <span className="text-indigo-300 font-bold">{publicState.verificationsCount}</span>
+                <span className="text-indigo-300 font-bold">{publicState.verificationsCount.toString()}</span>
               </div>
 
               <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 flex justify-between items-center">

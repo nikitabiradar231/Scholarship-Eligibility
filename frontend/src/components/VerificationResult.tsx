@@ -79,14 +79,25 @@ export const VerificationResult: React.FC<VerificationResultProps> = ({
           <div className="flex items-center justify-between text-xs text-slate-400">
             <span className="font-semibold flex items-center space-x-1">
               <Hash className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Compact ZK Proof Hash Digest</span>
+              <span>Compact ZK Proof / Transaction Hash</span>
             </span>
             <span className="font-mono text-[10px] text-indigo-300 bg-indigo-950 px-2 py-0.5 rounded border border-indigo-800">
-              Midnight Protocol v1
+              Midnight Preview
             </span>
           </div>
-          <div id="proof-hash-display" className="font-mono text-xs text-slate-200 break-all select-all bg-slate-900 p-2.5 rounded-xl border border-slate-800">
-            {result.proofHash}
+          <div id="proof-hash-display" className="font-mono text-xs text-slate-200 break-all select-all bg-slate-900 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
+            <span>{result.proofHash}</span>
+            {result.proofHash && !result.proofHash.startsWith("zk_proof_") && (
+              <a
+                href={`https://explorer.preview.midnight.network/transaction/${result.proofHash}`}
+                target="_blank"
+                rel="noreferrer"
+                className="ml-2 inline-flex items-center space-x-1 text-[11px] text-indigo-400 hover:text-indigo-300 underline"
+              >
+                <span>Explorer</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
           </div>
         </div>
 
@@ -110,7 +121,7 @@ export const VerificationResult: React.FC<VerificationResultProps> = ({
               </li>
               <li className="flex items-center space-x-1.5">
                 <span className="text-emerald-400">✓</span>
-                <span>Verifications Count: {result.publicState.verificationsCount}</span>
+                <span>Verifications Count: {result.publicState.verificationsCount.toString()}</span>
               </li>
             </ul>
           </div>

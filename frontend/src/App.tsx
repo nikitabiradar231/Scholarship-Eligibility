@@ -7,6 +7,7 @@ import {
   ApplicationStatus
 } from "../../src/contract";
 import { MidnightWalletAdapter } from "../../src/wallet";
+import { MidnightIndexerService } from "../../src/indexer";
 import { Header } from "./components/Header";
 import { RoleSelector, UserRole } from "./components/RoleSelector";
 import { StudentPortal } from "./components/StudentPortal";
@@ -18,32 +19,84 @@ import { UserProfileModal } from "./components/UserProfileModal";
 import { Wallet } from "lucide-react";
 
 const walletAdapter = new MidnightWalletAdapter();
+const indexerService = new MidnightIndexerService();
+
+const contractAddress = (import.meta as any).env?.VITE_CONTRACT_ADDRESS || "";
 
 export function App() {
-  const [contract] = useState<ScholarshipEligibilityContract>(
-    () => new ScholarshipEligibilityContract()
+  const [contract, setContract] = useState<ScholarshipEligibilityContract>(
+    () => new ScholarshipEligibilityContract(contractAddress)
   );
 
   const [walletState, setWalletState] = useState(() => walletAdapter.getState());
   const [currentRole, setCurrentRole] = useState<UserRole>(null);
   const [activeTab, setActiveTab] = useState<"student" | "provider" | "inspector">("student");
   
-  const [userName, setUserName] = useState<string>(() => {
-    const addr = walletAdapter.getState().address;
-    return addr ? localStorage.getItem(`username_${addr}`) || "" : "";
-  });
+  const [userName, setUserName] = useState<string>("");
 
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState<boolean>(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState<boolean>(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
 
+  const [isDeploying, setIsDeploying] = useState<boolean>(false);
+  const [deployError, setDeployError] = useState<string | null>(null);
+  const [deployResult, setDeployResult] = useState<{ contractAddress: string; txHash: string } | null>(null);
+
   const [publicState, setPublicState] = useState(() => contract.getLedgerState());
   const [scholarships, setScholarships] = useState<ScholarshipItem[]>(() => contract.getScholarships());
   const [applications, setApplications] = useState<StudentApplication[]>(() => contract.getApplicationsForProvider());
 
-  const refreshState = () => {
-    contract.loadFromStorage();
-    setPublicState(contract.getLedgerState());
+  const handleDeployContractVia1AM = async () => {
+    if (!walletState.isConnected || !walletAdapter.getConnectedApi()) {
+      setIsWalletModalOpen(true);
+      alert("Please connect your 1AM / Lace Midnight Wallet before deploying.");
+      return;
+    }
+
+    setIsDeploying(true);
+    setDeployError(null);
+    setDeployResult(null);
+
+    try {
+      const { deployScholarshipContractOnMidnight } = await import("../../src/deploy.js");
+      const creatorAddr = walletState.address || "0".repeat(64);
+      const res = await deployScholarshipContractOnMidnight(
+        {
+          scholarshipName: "Global Merit & Need-Based Scholarship 2026",
+          minimumMarks: 75n,
+          maximumFamilyIncome: 500000n,
+          creatorAddress: creatorAddr
+        },
+        walletAdapter
+      );
+
+      setDeployResult({
+        contractAddress: res.contractAddress,
+        txHash: res.txHash
+      });
+
+      const newContractInstance = new ScholarshipEligibilityContract(res.contractAddress);
+      setContract(newContractInstance);
+      refreshState();
+    } catch (err: any) {
+      console.error("[1AM Deploy Error]", err);
+      setDeployError(err?.message || "Contract deployment failed via 1AM Wallet.");
+    } finally {
+      setIsDeploying(false);
+    }
+  };
+
+  const refreshState = async () => {
+    try {
+      const indexerState = await indexerService.fetchContractState(contract.getContractAddress());
+      if (indexerState) {
+        setPublicState(indexerState);
+      } else {
+        setPublicState(contract.getLedgerState());
+      }
+    } catch (e) {
+      setPublicState(contract.getLedgerState());
+    }
     setScholarships(contract.getScholarships());
     setApplications(contract.getApplicationsForProvider());
   };
@@ -52,15 +105,7 @@ export function App() {
     refreshState();
   }, [activeTab, currentRole, walletState.address]);
 
-  useEffect(() => {
-    const handleStorageChange = () => {
-      refreshState();
-    };
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
-
-  // Sync role and username whenever wallet address changes
+  // Sync role and user name whenever wallet address changes
   useEffect(() => {
     const address = walletState.address;
     if (!address) {
@@ -69,38 +114,27 @@ export function App() {
       return;
     }
 
-    const savedName = localStorage.getItem(`username_${address}`);
-    setUserName(savedName || "");
-
     const registeredContractRole = contract.getUserRole(address);
-    const storedRole = (localStorage.getItem(`role_${address}`) as UserRole) || registeredContractRole;
-
-    if (storedRole) {
-      try {
-        contract.registerRole(address, storedRole);
-      } catch (err) {
-        console.warn(err);
-      }
-      setCurrentRole(storedRole);
-      setActiveTab(storedRole === "student" ? "student" : "provider");
+    if (registeredContractRole) {
+      setCurrentRole(registeredContractRole);
+      setActiveTab(registeredContractRole === "student" ? "student" : "provider");
     } else {
       setCurrentRole(null);
     }
   }, [walletState.address, contract]);
 
   const handleSaveUserName = (newName: string) => {
-    const address = walletState.address;
-    if (address) {
-      localStorage.setItem(`username_${address}`, newName);
-      setUserName(newName);
-    }
+    setUserName(newName);
   };
 
   const handleSelectRole = (role: "student" | "provider") => {
-    const address = walletState.address || "0xaddr_provider_alpha";
+    const address = walletState.address;
+    if (!address) {
+      alert("Please connect a valid Midnight Wallet before selecting a role.");
+      return;
+    }
     try {
       contract.registerRole(address, role);
-      localStorage.setItem(`role_${address}`, role);
       setCurrentRole(role);
       setActiveTab(role === "student" ? "student" : "provider");
     } catch (err: any) {
@@ -114,14 +148,22 @@ export function App() {
     minMarks: number,
     maxIncome: number
   ) => {
-    const address = walletState.address || "0xaddr_provider_alpha";
-    const displayName = userName || (address.includes("beta") ? "Provider Beta Org" : "Provider Admin Org");
+    const address = walletState.address;
+    if (!address) {
+      alert("Please connect a valid Midnight Wallet before creating a scholarship.");
+      return;
+    }
+    const displayName = userName || "Provider Admin Org";
     contract.createScholarship(name, description, minMarks, maxIncome, ["Academic Marksheet", "Family Income Certificate"], displayName, address);
     refreshState();
   };
 
   const handleDeleteScholarship = (scholarshipId: string) => {
-    const address = walletState.address || "0xaddr_provider_alpha";
+    const address = walletState.address;
+    if (!address) {
+      alert("Please connect a valid Midnight Wallet before deleting a scholarship.");
+      return;
+    }
     try {
       contract.deleteScholarship(scholarshipId, address);
       refreshState();
@@ -135,7 +177,11 @@ export function App() {
     marksheetFileName: string,
     incomeCertFileName: string
   ): boolean => {
-    const address = walletState.address || "0xaddr_student_alex";
+    const address = walletState.address;
+    if (!address) {
+      alert("Please connect a valid Midnight Wallet before submitting an application.");
+      return false;
+    }
     const displayName = userName ? `${userName} (Student)` : `Student (${address.slice(0, 8)})`;
     try {
       contract.submitApplication(
@@ -158,7 +204,11 @@ export function App() {
     status: ApplicationStatus,
     reason?: string
   ) => {
-    const address = walletState.address || "0xaddr_provider_alpha";
+    const address = walletState.address;
+    if (!address) {
+      alert("Please connect a valid Midnight Wallet before reviewing applications.");
+      return;
+    }
     try {
       contract.updateApplicationStatus(applicationId, status, address, reason);
       refreshState();
@@ -167,37 +217,40 @@ export function App() {
     }
   };
 
-  const handleRunVerification = (
+  const handleRunVerification = async (
     applicationId: string,
     marks: number,
     income: number
-  ): VerificationProofResult => {
-    const result = contract.verifyEligibility(
+  ): Promise<VerificationProofResult> => {
+    const address = walletState.address;
+    if (!address) {
+      throw new Error("Please connect a valid Midnight Wallet before running eligibility verification.");
+    }
+    const result = await contract.verifyEligibilityAsync(
       {
         studentMarks: BigInt(marks),
-        studentIncome: BigInt(income)
+        studentIncome: BigInt(income),
+        isCredentialVerified: true,
+        callerAddress: address,
+        callerRole: "student"
       },
-      applicationId
+      applicationId,
+      walletAdapter.getConnectedApi() ? walletAdapter : undefined
     );
     refreshState();
     return result;
   };
 
-  const handleConnectOneAmWallet = async () => {
-    console.log("[App] Connecting 1AM Wallet on Preprod...");
-    const updated = await walletAdapter.connect(undefined, "1am");
-    setWalletState(updated);
-  };
-
-  const handleConnectLaceWallet = async () => {
-    console.log("[App] Connecting Lace Wallet on Preprod...");
-    const updated = await walletAdapter.connect(undefined, "lace");
+  const handleConnectWallet = async (walletId?: string) => {
+    console.log("[App] Connecting Midnight Wallet via DApp Connector...");
+    const updated = await walletAdapter.connect(walletId);
     setWalletState(updated);
   };
 
   const handleConnectCustomAddress = (address: string) => {
-    const updated = walletAdapter.connect(address);
-    setWalletState(updated as any);
+    console.log("[App] Connecting custom wallet address:", address);
+    const updated = walletAdapter.connectCustomAddress(address);
+    setWalletState(updated);
   };
 
   const handleDisconnectWallet = () => {
@@ -224,7 +277,63 @@ export function App() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        {/* If Wallet is not connected, show Connect Lace Wallet prompt */}
+        {/* Deployment Loading Modal */}
+        {isDeploying && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
+            <div className="bg-slate-900 border border-indigo-500/30 rounded-3xl p-8 max-w-lg w-full text-center space-y-4 shadow-2xl animate-pulse">
+              <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
+              <h3 className="text-xl font-bold text-white">Deploying Smart Contract via 1AM Wallet</h3>
+              <p className="text-slate-300 text-sm">
+                Please check your 1AM Browser Wallet extension popup to authorize fee balancing and sign the deployment transaction using Account 1 tDUST...
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Deployment Success Banner */}
+        {deployResult && (
+          <div className="max-w-4xl mx-auto mb-6 p-6 bg-emerald-950/60 border border-emerald-500/40 rounded-2xl shadow-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
+                <h4 className="font-bold text-emerald-300 text-lg">✅ Smart Contract Successfully Deployed on Midnight Preview!</h4>
+              </div>
+              <button onClick={() => setDeployResult(null)} className="text-slate-400 hover:text-white font-bold text-sm">✕ Close</button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
+              <div className="bg-slate-900/80 p-3 rounded-xl border border-emerald-900/50">
+                <span className="text-emerald-400 font-semibold block">Contract Address:</span>
+                <span className="text-slate-200 select-all break-all">{deployResult.contractAddress}</span>
+              </div>
+              <div className="bg-slate-900/80 p-3 rounded-xl border border-emerald-900/50">
+                <span className="text-emerald-400 font-semibold block">Deployment Tx ID:</span>
+                <a
+                  href={`https://explorer.preview.midnight.network/tx/${deployResult.txHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-indigo-400 underline hover:text-indigo-300 break-all"
+                >
+                  {deployResult.txHash}
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Deployment Error Banner */}
+        {deployError && (
+          <div className="max-w-4xl mx-auto mb-6 p-6 bg-rose-950/60 border border-rose-500/40 rounded-2xl shadow-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-rose-300 text-lg">❌ 1AM Wallet Deployment Failed</h4>
+              <button onClick={() => setDeployError(null)} className="text-slate-400 hover:text-white font-bold text-sm">✕ Close</button>
+            </div>
+            <p className="text-rose-200 text-xs font-mono bg-slate-900/80 p-3 rounded-xl border border-rose-900/50 break-words">
+              {deployError}
+            </p>
+          </div>
+        )}
+
+        {/* If Wallet is not connected, show Connect Wallet prompt */}
         {!walletState.isConnected || !walletState.address ? (
           <div className="max-w-xl mx-auto my-12 p-8 rounded-3xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl text-center space-y-6 shadow-2xl">
             <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 p-0.5 flex items-center justify-center">
@@ -233,9 +342,9 @@ export function App() {
               </div>
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-white tracking-tight">Connect Your Wallet</h2>
+              <h2 className="text-2xl font-bold text-white tracking-tight">Connect Midnight Wallet</h2>
               <p className="text-slate-400 text-sm max-w-md mx-auto">
-                Connect your Midnight Lace Wallet extension or enter your wallet address to submit applications and execute Zero-Knowledge eligibility proofs.
+                Connect your Midnight Lace Wallet extension or 1AM Wallet via DApp Connector to submit applications and execute Zero-Knowledge eligibility proofs.
               </p>
             </div>
             <button
@@ -269,6 +378,7 @@ export function App() {
                 onDeleteScholarship={handleDeleteScholarship}
                 onUpdateStatus={handleUpdateApplicationStatus}
                 onOpenPrivacyModal={() => setIsPrivacyModalOpen(true)}
+                onDeployContract={handleDeployContractVia1AM}
               />
             )}
 
@@ -287,16 +397,16 @@ export function App() {
       <WalletConnectModal
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
-        onConnectOneAm={handleConnectOneAmWallet}
-        onConnectLace={handleConnectLaceWallet}
-        onConnectCustomAddress={handleConnectCustomAddress}
+        onConnectOneAm={() => handleConnectWallet("1am")}
+        onConnectLace={() => handleConnectWallet("lace")}
+        onConnectCustomAddress={(addr) => handleConnectCustomAddress(addr)}
       />
 
       {/* User Profile Modal */}
       <UserProfileModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
-        address={walletState.address}
+        walletState={walletState}
         currentRole={currentRole}
         userName={userName}
         onSaveUserName={handleSaveUserName}

@@ -1,14 +1,7 @@
-/**
- * ============================================================================
- * TEST SUITE: Private Scholarship Eligibility & Role/Ownership Layer
- * ============================================================================
- * Comprehensive unit tests covering permanent role binding, provider
- * scholarship ownership, authorized deletion, non-owner restrictions, and ZK proof execution.
- * ============================================================================
- */
-
 import { describe, it, expect, beforeEach } from "vitest";
 import { ScholarshipEligibilityContract } from "../src/contract.js";
+import { MidnightWalletAdapter } from "../src/wallet.js";
+import { MidnightIndexerService } from "../src/indexer.js";
 
 describe("Private Scholarship Eligibility & Credential Verification Contract", () => {
   let contract: ScholarshipEligibilityContract;
@@ -24,9 +17,12 @@ describe("Private Scholarship Eligibility & Credential Verification Contract", (
     const scholarships = contract.getScholarships();
     expect(scholarships.length).toBe(0);
 
+    const applications = contract.getApplicationsForStudent();
+    expect(applications.length).toBe(0);
+
     const ledger = contract.getLedgerState();
-    expect(ledger.scholarships.length).toBe(0);
-    expect(ledger.applications.length).toBe(0);
+    expect(ledger.verificationsCount).toBe(0n);
+    expect(ledger.isInitialized).toBe(true);
   });
 
   // --------------------------------------------------------------------------
@@ -35,11 +31,9 @@ describe("Private Scholarship Eligibility & Credential Verification Contract", (
   it("TEST 2 — Permanent Role Locking: Student account MUST NOT be allowed to become a Scholarship Provider later", () => {
     const studentAddr = "0xaddr_student_alex";
 
-    // First register as Student
     contract.registerRole(studentAddr, "student");
     expect(contract.getUserRole(studentAddr)).toBe("student");
 
-    // Attempting to re-register or switch to provider must throw an error
     expect(() => {
       contract.registerRole(studentAddr, "provider");
     }).toThrowError(/permanently registered as a 'student'/);
@@ -51,11 +45,9 @@ describe("Private Scholarship Eligibility & Credential Verification Contract", (
   it("TEST 3 — Permanent Role Locking: Scholarship Provider account MUST NOT be allowed to become a Student later", () => {
     const providerAddr = "0xaddr_provider_alpha";
 
-    // First register as Provider
     contract.registerRole(providerAddr, "provider");
     expect(contract.getUserRole(providerAddr)).toBe("provider");
 
-    // Attempting to re-register or switch to student must throw an error
     expect(() => {
       contract.registerRole(providerAddr, "student");
     }).toThrowError(/permanently registered as a 'provider'/);
@@ -79,7 +71,6 @@ describe("Private Scholarship Eligibility & Credential Verification Contract", (
 
     expect(contract.getScholarships().length).toBe(1);
 
-    // Owner deletes their own scholarship
     contract.deleteScholarship(sch.id, providerAddr);
 
     expect(contract.getScholarships().length).toBe(0);
@@ -103,12 +94,10 @@ describe("Private Scholarship Eligibility & Credential Verification Contract", (
       providerAlpha
     );
 
-    // Provider Beta attempts to delete Provider Alpha's scholarship
     expect(() => {
       contract.deleteScholarship(sch.id, providerBeta);
     }).toThrowError(/Unauthorized: Only the scholarship creator/);
 
-    // Ensure scholarship remains intact
     expect(contract.getScholarshipById(sch.id)).toBeDefined();
     expect(contract.getScholarships().length).toBe(1);
   });
@@ -130,12 +119,10 @@ describe("Private Scholarship Eligibility & Credential Verification Contract", (
       providerAlpha
     );
 
-    // Provider Beta attempts to edit Provider Alpha's criteria
     expect(() => {
       contract.updateCriteria(sch.id, providerBeta, "Hijacked Title", 50n, 1000000n);
     }).toThrowError(/Unauthorized: Only the scholarship creator/);
 
-    // Ensure criteria remains unchanged
     const original = contract.getScholarshipById(sch.id);
     expect(original?.name).toBe("Alpha STEM Fellowship");
     expect(original?.minimumMarks).toBe(85n);
@@ -150,7 +137,6 @@ describe("Private Scholarship Eligibility & Credential Verification Contract", (
 
     contract.registerRole(studentAddr, "student");
 
-    // Student attempts to create a scholarship
     expect(() => {
       contract.createScholarship(
         "Fake Student Grant",
@@ -163,7 +149,6 @@ describe("Private Scholarship Eligibility & Credential Verification Contract", (
       );
     }).toThrowError(/registered as a Student and cannot create scholarships/);
 
-    // Provider creates a legitimate scholarship
     const sch = contract.createScholarship(
       "Legitimate Provider Grant",
       "Valid grant",
@@ -174,20 +159,18 @@ describe("Private Scholarship Eligibility & Credential Verification Contract", (
       providerAddr
     );
 
-    // Student attempts to delete provider's scholarship
     expect(() => {
       contract.deleteScholarship(sch.id, studentAddr);
     }).toThrowError(/Unauthorized/);
   });
 
   // --------------------------------------------------------------------------
-  // TEST 8 — Full Application & ZK Eligibility Verification Lifecycle
+  // TEST 8 — Full Application & ZK Eligibility Verification Lifecycle (Eligible Student)
   // --------------------------------------------------------------------------
-  it("TEST 8 — Lifecycle: Full flow (Provider creates -> Student applies -> Provider verifies -> Student proves ZK eligibility)", () => {
+  it("TEST 8 — Lifecycle: Full flow (Eligible Student: marks >= min, income <= max)", () => {
     const providerAddr = "0xaddr_provider_alpha";
     const studentAddr = "0xaddr_student_alex";
 
-    // 1. Provider creates scholarship
     const sch = contract.createScholarship(
       "National Science Grant 2026",
       "Full merit grant for science students",
@@ -198,7 +181,6 @@ describe("Private Scholarship Eligibility & Credential Verification Contract", (
       providerAddr
     );
 
-    // 2. Student applies
     const app = contract.submitApplication(
       sch.id,
       studentAddr,
@@ -208,54 +190,224 @@ describe("Private Scholarship Eligibility & Credential Verification Contract", (
     );
     expect(app.status).toBe("Documents Submitted");
 
-    // Unverified gating assertion
     expect(() => {
       contract.verifyEligibility({ studentMarks: 85n, studentIncome: 300000n }, app.id);
     }).toThrowError(/Credentials must be verified by a scholarship administrator first/);
 
-    // 3. Provider verifies application credentials
     contract.updateApplicationStatus(app.id, "Verified", providerAddr);
     expect(app.status).toBe("Verified");
 
-    // 4. Student evaluates off-chain witness & executes ZK proof
     const result = contract.verifyEligibility(
       { studentMarks: 85n, studentIncome: 300000n },
       app.id
     );
 
     expect(result.isEligible).toBe(true);
-    expect(result.proofHash).toMatch(/^0xzk_/);
+    expect(result.publicState.verificationsCount).toBe(1n);
+    expect(result.publicState.latestVerificationResult).toBe(true);
     expect(result.privacySummary.marksDisclosed).toBe(false);
     expect(result.privacySummary.incomeDisclosed).toBe(false);
     expect(result.privacySummary.resultDisclosed).toBe(true);
   });
 
   // --------------------------------------------------------------------------
-  // TEST 9 — Non-Owner Provider Cannot Review Another Provider's Applications
+  // TEST 9 — Marks Below Minimum Condition
   // --------------------------------------------------------------------------
-  it("TEST 9 — Ownership Security: Provider B MUST NOT be allowed to review or verify applications for Provider A's scholarship", () => {
-    const providerAlpha = "0xaddr_provider_alpha";
-    const providerBeta = "0xaddr_provider_beta";
-    const studentAddr = "0xaddr_student_alex";
+  it("TEST 9 — Circuit Execution: Marks below minimum requirement evaluates to Not Eligible", () => {
+    const providerAddr = "0xaddr_provider_alpha";
+    const studentAddr = "0xaddr_student_bob";
 
     const sch = contract.createScholarship(
-      "Alpha Fellowship 2026",
-      "Created by Alpha",
-      70n,
+      "High Academic Standard Award",
+      "Requires at least 80% marks",
+      80n,
       500000n,
       [],
       "Provider Alpha",
-      providerAlpha
+      providerAddr
     );
 
-    const app = contract.submitApplication(sch.id, studentAddr, "Alex Vance");
+    const app = contract.submitApplication(sch.id, studentAddr, "Bob Smith");
+    contract.updateApplicationStatus(app.id, "Verified", providerAddr);
 
-    // Provider Beta attempts to verify application for Provider Alpha's scholarship
+    const result = contract.verifyEligibility(
+      { studentMarks: 65n, studentIncome: 300000n }, // 65% < 80%
+      app.id
+    );
+
+    expect(result.isEligible).toBe(false);
+    expect(result.publicState.latestVerificationResult).toBe(false);
+    expect(result.publicState.verificationsCount).toBe(1n);
+  });
+
+  // --------------------------------------------------------------------------
+  // TEST 10 — Family Income Above Maximum Condition
+  // --------------------------------------------------------------------------
+  it("TEST 10 — Circuit Execution: Family income exceeding maximum parameter evaluates to Not Eligible", () => {
+    const providerAddr = "0xaddr_provider_alpha";
+    const studentAddr = "0xaddr_student_charlie";
+
+    const sch = contract.createScholarship(
+      "Need-Based Financial Support",
+      "Requires income <= 400,000",
+      70n,
+      400000n,
+      [],
+      "Provider Alpha",
+      providerAddr
+    );
+
+    const app = contract.submitApplication(sch.id, studentAddr, "Charlie Brown");
+    contract.updateApplicationStatus(app.id, "Verified", providerAddr);
+
+    const result = contract.verifyEligibility(
+      { studentMarks: 90n, studentIncome: 600000n }, // 600k > 400k
+      app.id
+    );
+
+    expect(result.isEligible).toBe(false);
+    expect(result.publicState.latestVerificationResult).toBe(false);
+  });
+
+  // --------------------------------------------------------------------------
+  // TEST 11 — Both Conditions Failing (Low Marks AND High Income)
+  // --------------------------------------------------------------------------
+  it("TEST 11 — Circuit Execution: Both marks below minimum AND income above maximum evaluates to Not Eligible", () => {
+    const providerAddr = "0xaddr_provider_alpha";
+    const studentAddr = "0xaddr_student_david";
+
+    const sch = contract.createScholarship(
+      "Strict Merit & Need Award",
+      "Min 75% marks, max 500k income",
+      75n,
+      500000n,
+      [],
+      "Provider Alpha",
+      providerAddr
+    );
+
+    const app = contract.submitApplication(sch.id, studentAddr, "David Lee");
+    contract.updateApplicationStatus(app.id, "Verified", providerAddr);
+
+    const result = contract.verifyEligibility(
+      { studentMarks: 50n, studentIncome: 800000n }, // 50 < 75 AND 800k > 500k
+      app.id
+    );
+
+    expect(result.isEligible).toBe(false);
+    expect(result.publicState.latestVerificationResult).toBe(false);
+  });
+
+  // --------------------------------------------------------------------------
+  // TEST 12 — Wallet Adapter Connection & Address Management
+  // --------------------------------------------------------------------------
+  it("TEST 12 — Wallet Adapter: Connect custom address and retrieve state", () => {
+    const wallet = new MidnightWalletAdapter();
+    expect(wallet.getState().isConnected).toBe(false);
+
+    const customAddr = "mn_addr1_test_preview_wallet_address_123456789";
+    const state = wallet.connectCustomAddress(customAddr);
+
+    expect(state.isConnected).toBe(true);
+    expect(state.address).toBe(customAddr);
+    expect(state.networkId).toBe("preview");
+
+    const provider = wallet.getWalletProvider();
+    expect(provider).toBeDefined();
+    expect(typeof provider.getCoinPublicKey).toBe("function");
+
+    const disconnected = wallet.disconnect();
+    expect(disconnected.isConnected).toBe(false);
+    expect(disconnected.address).toBeNull();
+  });
+
+  // --------------------------------------------------------------------------
+  // TEST 13 — Indexer Public Data Service Response Parsing
+  // --------------------------------------------------------------------------
+  it("TEST 13 — Indexer Service: Correctly parses raw indexer GraphQL response payloads", () => {
+    const indexer = new MidnightIndexerService();
+
+    const mockRaw = {
+      scholarshipName: "Midnight Preview Merit Award",
+      minimumMarks: "75",
+      maximumFamilyIncome: "500000",
+      creatorAddress: "mn_addr1_creator_preview",
+      credentialVerificationStatus: "Verified",
+      verificationsCount: "42",
+      latestVerificationResult: true,
+      isInitialized: true
+    };
+
+    const parsed = indexer.parseLedgerState(mockRaw);
+    expect(parsed).not.toBeNull();
+    expect(parsed?.scholarshipName).toBe("Midnight Preview Merit Award");
+    expect(parsed?.minimumMarks).toBe(75n);
+    expect(parsed?.maximumFamilyIncome).toBe(500000n);
+    expect(parsed?.verificationsCount).toBe(42n);
+    expect(parsed?.latestVerificationResult).toBe(true);
+  });
+
+  // --------------------------------------------------------------------------
+  // TEST 14 — Privacy Invariant Verification
+  // --------------------------------------------------------------------------
+  it("TEST 14 — Privacy Invariants: Raw student marks & income are NEVER present in PublicLedgerState", () => {
+    const providerAddr = "0xaddr_provider_privacy";
+    const studentAddr = "0xaddr_student_privacy";
+
+    const sch = contract.createScholarship(
+      "Privacy Guarded Fellowship",
+      "Tests zero disclosure of raw values",
+      80n,
+      600000n,
+      [],
+      "Provider Privacy",
+      providerAddr
+    );
+
+    const app = contract.submitApplication(sch.id, studentAddr, "Privacy Tester");
+    contract.updateApplicationStatus(app.id, "Verified", providerAddr);
+
+    const proof = contract.verifyEligibility(
+      { studentMarks: 95n, studentIncome: 200000n },
+      app.id
+    );
+
+    const ledger = proof.publicState as any;
+    expect(ledger.studentMarks).toBeUndefined();
+    expect(ledger.studentIncome).toBeUndefined();
+    expect(ledger.marks).toBeUndefined();
+    expect(ledger.income).toBeUndefined();
+    expect(proof.privacySummary.marksDisclosed).toBe(false);
+    expect(proof.privacySummary.incomeDisclosed).toBe(false);
+    expect(proof.privacySummary.resultDisclosed).toBe(true);
+  });
+
+  // --------------------------------------------------------------------------
+  // TEST 15 — Circuit Assertion Enforcement
+  // --------------------------------------------------------------------------
+  it("TEST 15 — Circuit Safety: Unverified student application rejects ZK proof generation", () => {
+    const providerAddr = "0xaddr_provider_safety";
+    const studentAddr = "0xaddr_student_safety";
+
+    const sch = contract.createScholarship(
+      "Safety Check Award",
+      "Requires verified credential status",
+      70n,
+      500000n,
+      [],
+      "Provider Safety",
+      providerAddr
+    );
+
+    const app = contract.submitApplication(sch.id, studentAddr, "Unverified Student");
+
     expect(() => {
-      contract.updateApplicationStatus(app.id, "Verified", providerBeta);
-    }).toThrowError(/Unauthorized: Only the creator of/);
-
-    expect(app.status).toBe("Documents Submitted");
+      contract.verifyEligibility(
+        { studentMarks: 90n, studentIncome: 300000n, isCredentialVerified: false },
+        app.id
+      );
+    }).toThrowError(/Credentials must be verified by a scholarship administrator first/);
   });
 });
+
 

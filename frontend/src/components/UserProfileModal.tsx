@@ -5,7 +5,15 @@ import { UserRole } from "./RoleSelector";
 interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  address: string | null;
+  walletState: {
+    isConnected: boolean;
+    address: string | null;
+    shieldedAddress: string | null;
+    unshieldedAddress: string | null;
+    dustAddress: string | null;
+    networkId: string;
+    walletName: string | null;
+  };
   currentRole: UserRole;
   userName: string;
   onSaveUserName: (newName: string) => void;
@@ -15,27 +23,25 @@ interface UserProfileModalProps {
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   isOpen,
   onClose,
-  address,
+  walletState,
   currentRole,
   userName,
   onSaveUserName,
   onDisconnect
 }) => {
   const [nameInput, setNameInput] = useState(userName || "");
-  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   useEffect(() => {
     setNameInput(userName || "");
   }, [userName, isOpen]);
 
-  if (!isOpen || !address) return null;
+  if (!isOpen || !walletState.address) return null;
 
-  const handleCopyAddress = () => {
-    if (address) {
-      navigator.clipboard.writeText(address);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+  const handleCopy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(label);
+    setTimeout(() => setCopiedKey(null), 2000);
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -48,7 +54,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6">
+      <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5">
         
         {/* Close Button */}
         <button
@@ -78,30 +84,82 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 {currentRole === "student" ? <GraduationCap className="w-3 h-3" /> : <Building2 className="w-3 h-3" />}
                 <span>{currentRole || "Unassigned"}</span>
               </span>
-              <span className="text-xs text-slate-400">• Midnight Network</span>
+              <span className="text-xs text-slate-400 font-mono">
+                {walletState.walletName || "Midnight Wallet"} • <span className="text-emerald-400 font-bold uppercase">{walletState.networkId || "preprod"}</span>
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Wallet Address Display */}
-        <div className="space-y-1.5">
-          <label className="block text-xs font-semibold text-slate-300">
-            Connected Wallet Address
-          </label>
-          <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
-            <span className="text-xs font-mono text-slate-300 truncate mr-2">{address}</span>
-            <button
-              onClick={handleCopyAddress}
-              className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white transition-all shrink-0 cursor-pointer"
-              title="Copy Address"
-            >
-              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-            </button>
-          </div>
+        {/* Wallet Address Types Section */}
+        <div className="space-y-3 pt-1">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">
+            Connected Address Types
+          </h4>
+
+          {/* 1. Shielded Address */}
+          {walletState.shieldedAddress && (
+            <div className="p-3 bg-slate-950 border border-indigo-900/60 rounded-xl space-y-1">
+              <div className="flex items-center justify-between text-[11px] font-mono">
+                <span className="text-indigo-400 font-bold uppercase">Shielded address</span>
+                <button
+                  onClick={() => handleCopy(walletState.shieldedAddress!, "shielded")}
+                  className="text-slate-400 hover:text-white flex items-center space-x-1"
+                >
+                  {copiedKey === "shielded" ? (
+                    <span className="text-emerald-400 text-[10px]">Copied!</span>
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+              <p className="text-xs font-mono text-white truncate">{walletState.shieldedAddress}</p>
+            </div>
+          )}
+
+          {/* 2. Unshielded Address */}
+          {walletState.unshieldedAddress && (
+            <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+              <div className="flex items-center justify-between text-[11px] font-mono">
+                <span className="text-amber-400 font-bold uppercase">Unshielded address</span>
+                <button
+                  onClick={() => handleCopy(walletState.unshieldedAddress!, "unshielded")}
+                  className="text-slate-400 hover:text-white flex items-center space-x-1"
+                >
+                  {copiedKey === "unshielded" ? (
+                    <span className="text-emerald-400 text-[10px]">Copied!</span>
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+              <p className="text-xs font-mono text-slate-300 truncate">{walletState.unshieldedAddress}</p>
+            </div>
+          )}
+
+          {/* 3. DUST Address */}
+          {walletState.dustAddress && (
+            <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
+              <div className="flex items-center justify-between text-[11px] font-mono">
+                <span className="text-purple-400 font-bold uppercase">DUST address</span>
+                <button
+                  onClick={() => handleCopy(walletState.dustAddress!, "dust")}
+                  className="text-slate-400 hover:text-white flex items-center space-x-1"
+                >
+                  {copiedKey === "dust" ? (
+                    <span className="text-emerald-400 text-[10px]">Copied!</span>
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+              <p className="text-xs font-mono text-slate-300 truncate">{walletState.dustAddress}</p>
+            </div>
+          )}
         </div>
 
         {/* Edit Username Form */}
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSave} className="space-y-4 pt-1">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
               Display User Name
@@ -110,7 +168,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               type="text"
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
-              placeholder="Enter your name or organisation"
+              placeholder="Enter your name or organization"
               className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-medium text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition-all"
             />
           </div>
