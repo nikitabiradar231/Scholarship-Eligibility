@@ -47,7 +47,7 @@ npm run build:contract
 
 ## 🧪 Step 3: Run Automated Privacy & Contract Tests
 
-Run the complete test suite (9 tests covering fresh state initialization, permanent role locking, scholarship ownership deletion, non-owner edit/delete rejection, credential status gating, and ZK proof execution):
+Run the complete test suite (34 tests covering fresh state initialization, permanent role locking, scholarship ownership deletion, non-owner edit/delete rejection, credential status gating, ZK proof execution, L5 search, L5 scholarship details, L5 workflow guidance, and cross-feature integration):
 
 ```bash
 npm test
@@ -55,9 +55,9 @@ npm test
 
 Expected Output:
 ```text
- ✓ tests/scholarship-eligibility.test.ts (9 tests)
- Test Files  1 passed (1)
-      Tests  9 passed (9)
+ ✓ tests/scholarship-eligibility.test.ts (19 tests)
+ Test Files  2 passed (2)
+      Tests  34 passed (34)
 ```
 
 ---
